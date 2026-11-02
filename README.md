@@ -10,8 +10,7 @@ GDGoC KU Worktree 프로젝트
 | 항목 | 링크 |
 | --- | --- |
 | 노션 팀 홈 | https://app.notion.com/p/886b062e08d382a3933101af3d03715d |
-| Figma | 추가 예정 |
-| Discord | 추가 예정 |
+| Figma | https://www.figma.com/design/rOHMIiwk4vIGPQspseCEp1/%EC%98%A4%EB%8A%98%EC%9D%98-%EA%B2%BD%EC%A0%9C-%E2%80%93-%ED%99%88-%ED%99%94%EB%A9%B4?node-id=0-1&t=8Xxwe1sLBdHj0PGQ-1 |
 
 ## 팀
 
