@@ -9,7 +9,7 @@ flutter run -d chrome
 ```
 
 - Flutter SDK가 필요해요 (`flutter doctor`로 확인).
-- 폰트(Noto Sans KR / Noto Serif KR)는 `google_fonts` 패키지가 처음 실행할 때 내려받아요. 인터넷 연결이 필요해요.
+- 폰트(Noto Sans KR / Noto Serif KR)는 `assets/fonts/`에 넣어 둬서 인터넷 없이도 떠요. 원본이 너무 커서(굵기당 6~14MB) 자주 쓰는 한글 2,350자 + 영문·숫자·기호만 남긴 파일이에요. 목록에 없는 글자는 기본 폰트로 보여요.
 
 ## 폴더 구조
 

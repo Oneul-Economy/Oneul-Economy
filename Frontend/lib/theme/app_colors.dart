@@ -18,4 +18,13 @@ class AppColors {
 
   /// 다크 카드 위 요약 글자
   static const onInkMuted = Color(0xFFC7C2B8);
+
+  /// 다크 카드 위 행 구분선
+  static const inkDivider = Color(0xFF2C2F36);
+
+  /// 다크 카드 위 행의 작은 라벨
+  static const onInkSubtle = Color(0xFFA8A39A);
+
+  /// 다크 카드 위 아직 안 한 항목의 빈 원
+  static const inkRing = Color(0xFF3A3D44);
 }

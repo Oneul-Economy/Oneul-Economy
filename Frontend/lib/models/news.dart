@@ -23,17 +23,17 @@ class News {
   });
 
   factory News.fromJson(Map<String, dynamic> json) => News(
-        id: json['id'] as String,
-        stockName: json['stock_name'] as String,
-        title: json['title'] as String,
-        summary: json['summary'] as String,
-        readMinutes: json['read_minutes'] as int,
-        body: List<String>.from(json['body'] as List),
-        terms: (json['terms'] as List)
-            .map((e) => Term.fromJson(e as Map<String, dynamic>))
-            .toList(),
-        source: NewsSource.fromJson(json['source'] as Map<String, dynamic>),
-      );
+    id: json['id'] as String,
+    stockName: json['stock_name'] as String,
+    title: json['title'] as String,
+    summary: json['summary'] as String,
+    readMinutes: json['read_minutes'] as int,
+    body: List<String>.from(json['body'] as List),
+    terms: (json['terms'] as List)
+        .map((e) => Term.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    source: NewsSource.fromJson(json['source'] as Map<String, dynamic>),
+  );
 }
 
 /// 본문 아래 용어 박스에 들어갈 어려운 용어와 쉬운 설명.
@@ -43,10 +43,8 @@ class Term {
 
   const Term({required this.word, required this.meaning});
 
-  factory Term.fromJson(Map<String, dynamic> json) => Term(
-        word: json['word'] as String,
-        meaning: json['meaning'] as String,
-      );
+  factory Term.fromJson(Map<String, dynamic> json) =>
+      Term(word: json['word'] as String, meaning: json['meaning'] as String);
 }
 
 /// 원문 기사 정보 (본문 맨 아래 출처).
@@ -62,8 +60,8 @@ class NewsSource {
   });
 
   factory NewsSource.fromJson(Map<String, dynamic> json) => NewsSource(
-        press: json['press'] as String,
-        url: json['url'] as String,
-        publishedAt: DateTime.parse(json['published_at'] as String),
-      );
+    press: json['press'] as String,
+    url: json['url'] as String,
+    publishedAt: DateTime.parse(json['published_at'] as String),
+  );
 }

@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/news.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import '../widgets/news_card.dart';
 import 'news_detail_screen.dart';
 
@@ -31,6 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (_) => NewsDetailScreen(news: news)),
     );
+  }
+
+  // 퀴즈 화면은 아직 없어서 안내만 띄운다.
+  void _showQuizComingSoon(int index) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('퀴즈 ${index + 1}은(는) 준비 중이에요.')));
   }
 
   @override
@@ -66,7 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
                 final news = snapshot.data!;
-                return NewsCard(news: news, onTap: () => _openDetail(news));
+                return NewsCard(
+                  news: news,
+                  onTap: () => _openDetail(news),
+                  onQuizTap: _showQuizComingSoon,
+                );
               },
             ),
           ],
@@ -81,12 +92,27 @@ class _HomeHeader extends StatelessWidget {
   const _HomeHeader();
 
   static const _months = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
   static const _weekdays = [
-    'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
-    'FRIDAY', 'SATURDAY', 'SUNDAY',
+    'MONDAY',
+    'TUESDAY',
+    'WEDNESDAY',
+    'THURSDAY',
+    'FRIDAY',
+    'SATURDAY',
+    'SUNDAY',
   ];
 
   @override
@@ -104,7 +130,8 @@ class _HomeHeader extends StatelessWidget {
             children: [
               Text(
                 '오늘의 경제',
-                style: GoogleFonts.notoSerifKr(
+                style: TextStyle(
+                  fontFamily: AppFonts.serif,
                   color: AppColors.ink,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
@@ -115,7 +142,8 @@ class _HomeHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 date,
-                style: GoogleFonts.notoSansKr(
+                style: TextStyle(
+                  fontFamily: AppFonts.sans,
                   color: AppColors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

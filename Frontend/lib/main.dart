@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
 import 'theme/app_colors.dart';
+import 'theme/app_fonts.dart';
 
 void main() {
   runApp(const OneulEconomyApp());
@@ -21,6 +22,7 @@ class OneulEconomyApp extends StatelessWidget {
           surface: AppColors.paper,
         ),
         scaffoldBackgroundColor: AppColors.paper,
+        fontFamily: AppFonts.sans,
         useMaterial3: true,
       ),
       home: const HomeScreen(),
