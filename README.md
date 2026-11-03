@@ -8,25 +8,26 @@ GDGoC KU Worktree 프로젝트
 ## 링크
 
 | 항목 | 링크 |
-| 노션 팀 홈 | https://app.notion.com/p/886b062e08d382a3933101af3d03715d |
-| Figma | https://www.figma.com/design/rOHMIiwk4vIGPQspseCEp1/%EC%98%A4%EB%8A%98%EC%9D%98-%EA%B2%BD%EC%A0%9C-%E2%80%93-%ED%99%88-%ED%99%94%EB%A9%B4?node-id=0-1&t=8Xxwe1sLBdHj0PGQ-1 |
+| --- | --- |
+| 노션 팀 홈 | [Notion](https://app.notion.com/p/886b062e08d382a3933101af3d03715d) |
+| Figma | [오늘의 경제 – 홈 화면](https://www.figma.com/design/rOHMIiwk4vIGPQspseCEp1/?node-id=0-1) |
 
 ## 팀
 
 | 이름 | 역할 | GitHub |
-| 박재윤 | PM · 팀장 | @chrispark0304 |
-| 진승연 | FE · BE | @jinseungyeon |
-| 형유진 | BE · AI | @egn27-wq |
-| 배경민 | AI · BE | @baegyeongmin |
-| 오정원 | AI · FE | @zerozero5-jw |
-
+| --- | --- | --- |
+| 박재윤 | PM · 팀장 | [@chrispark0304](https://github.com/chrispark0304) |
+| 진승연 | FE · BE | [@jinseungyeon](https://github.com/jinseungyeon) |
+| 형유진 | BE · AI | [@egn27-wq](https://github.com/egn27-wq) |
+| 배경민 | AI · BE | [@baegyeongmin](https://github.com/baegyeongmin) |
+| 오정원 | AI · FE | [@zerozero5-jw](https://github.com/zerozero5-jw) |
 
 ## 폴더 구조
 
 ```
-Oneul-Economy /
-├── Frontend /            
-├── Backend /
+Oneul-Economy/
+├── Frontend/       Flutter 앱
+├── Backend/
 │   ├── pipeline/   뉴스·공시 수집, 배치 스케줄
 │   └── db/         모델, 마이그레이션
 ├── AI/             프롬프트, 해설·용어·퀴즈 생성
