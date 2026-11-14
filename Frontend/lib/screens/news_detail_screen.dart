@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/news.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NewsDetailScreen extends StatelessWidget {
 
@@ -9,6 +10,8 @@ class NewsDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final d = news.source.publishedAt.toLocal();
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -79,15 +82,19 @@ class NewsDetailScreen extends StatelessWidget {
               ),
 
             const SizedBox(height: 32),
-            
-            const Text(
-              '출처 · 오늘의 경제 · 2026-11-05',
+
+            Text(
+              
+              '출처 · ${news.source.press} · ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '원문 보기 →',
-              style: TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.bold),
+            InkWell(
+              onTap: () => launchUrl(Uri.parse(news.source.url)),
+              child: const Text(
+                '원문 보기 →',
+                style: TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 40),
           ],
