@@ -1,31 +1,30 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:oneul_economy/models/news.dart';
+import 'package:oneul_economy/screens/news_detail_screen.dart';
+import 'package:oneul_economy/widgets/news_card.dart';
 
 void main() {
-  test('News.fromJson이 #3 형식의 JSON을 읽는다', () {
-    final news = News.fromJson({
-      'id': '20261102-005930-001',
-      'stock_name': '삼성전자',
-      'title': 'HBM이 뭐길래 주가가 오를까',
-      'summary': '요약',
-      'read_minutes': 3,
-      'body': ['문단 1', '문단 2'],
-      'terms': [
-        {'word': 'HBM', 'meaning': '쌓아 올린 메모리'},
-      ],
-      'source': {
-        'press': '한국경제',
-        'url': 'https://example.com',
-        'published_at': '2026-11-02T09:00:00+09:00',
-      },
-    });
+    final news = News.fromJson({ /* widget_test.dart의 JSON 복사, title만 고유하게 */ });
 
-    expect(news.stockName, '삼성전자');
-    expect(news.readMinutes, 3);
-    expect(news.body, hasLength(2));
-    expect(news.terms.single.word, 'HBM');
-    expect(news.source.press, '한국경제');
-    expect(news.source.publishedAt.toUtc(), DateTime.utc(2026, 11, 2, 0));
+  testWidgets('카드를 누르면 본문 화면에 실제 제목이 보인다', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => NewsCard(
+            news: news,
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => NewsDetailScreen(news: news))),
+          ),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text('본문 읽기'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewsDetailScreen), findsOneWidget);
+    expect(find.text(news.title), findsOneWidget);
+    expect(find.text(news.body.first), findsOneWidget);
   });
 }

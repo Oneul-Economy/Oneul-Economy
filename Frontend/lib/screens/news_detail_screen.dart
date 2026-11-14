@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:oneul_economy/theme/app_colors.dart';
+import 'package:oneul_economy/theme/app_fonts.dart';
 import '../models/news.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -13,12 +15,12 @@ class NewsDetailScreen extends StatelessWidget {
     final d = news.source.publishedAt.toLocal();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.paper,
 
       appBar: AppBar(
         title: Text('${news.stockName} · ${news.readMinutes}분', style: TextStyle(fontSize: 16)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: AppColors.paper,
+        foregroundColor: AppColors.ink,
         elevation: 0,
       ),
 
@@ -31,7 +33,11 @@ class NewsDetailScreen extends StatelessWidget {
           children: [
             Text(
               news.title,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontFamily: AppFonts.serif,
+                fontSize: 24,
+                 fontWeight: FontWeight.bold
+                 ),
             ),
 
             const SizedBox(height: 24),
@@ -66,7 +72,7 @@ class NewsDetailScreen extends StatelessWidget {
                     for (Term term in news.terms)
                       RichText(
                         text: TextSpan(
-                          style: TextStyle(color: Colors.black87, fontSize: 14, height: 1.5),
+                          style: TextStyle(color: AppColors.ink, fontSize: 14, height: 1.5),
                           children: [
                             TextSpan(text: '${term.word} ', 
                             style: TextStyle(fontWeight: FontWeight.bold)
@@ -86,14 +92,14 @@ class NewsDetailScreen extends StatelessWidget {
             Text(
               
               '출처 · ${news.source.press} · ${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(fontSize: 14, color: AppColors.muted),
             ),
             const SizedBox(height: 8),
             InkWell(
               onTap: () => launchUrl(Uri.parse(news.source.url)),
               child: const Text(
                 '원문 보기 →',
-                style: TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 14, color: AppColors.ink, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 40),
