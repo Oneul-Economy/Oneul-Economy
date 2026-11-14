@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import '../models/news.dart';
 
 class NewsDetailScreen extends StatelessWidget {
-  final dynamic news; // 팀원의 홈 화면 코드와 충돌하지 않도록 데이터 받는 통로 복구
 
   const NewsDetailScreen({super.key, required this.news});
+  final News news; // 팀원의 홈 화면 코드와 충돌하지 않도록 데이터 받는 통로 복구
+
 
   @override
   Widget build(BuildContext context) {
