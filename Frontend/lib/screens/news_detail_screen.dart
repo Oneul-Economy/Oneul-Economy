@@ -12,7 +12,7 @@ class NewsDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('삼성전자 · 3분', style: TextStyle(fontSize: 16)),
+        title: Text('${news.stockName} · ${news.readMinutes}분', style: TextStyle(fontSize: 16)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -22,16 +22,15 @@ class NewsDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'HBM이 뭐길래 주가가 오를까',
+            Text(
+              news.title,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'AI 서버에 꼭 필요한 메모리 HBM 주문이 늘면서 삼성전자 실적 기대감이 커졌습니다.\n\n'
-              'HBM은 데이터를 한 번에 많이, 그리고 빠르게 처리할 수 있어서 인공지능(AI) 서비스에 필수적인 부품으로 꼽힙니다. 최근 전 세계적으로 AI 열풍이 불면서 HBM을 찾는 기업들이 폭발적으로 증가하고 있습니다.\n\n'
-              '특히 삼성전자는 차세대 HBM 개발과 양산에 박차를 가하며 시장의 주목을 받고 있습니다. 전문가들은 이러한 메모리 반도체 수요 증가가 향후 주가에도 긍정적인 영향을 미칠 것으로 전망하고 있습니다.',
-              style: TextStyle(fontSize: 16, height: 1.7),
+            for (final paragraph in news.body)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(paragraph, style: const TextStyle(fontSize: 16, height: 1.7)),
             ),
             const SizedBox(height: 24),
             Container(
