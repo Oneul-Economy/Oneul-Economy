@@ -1,5 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware # 다른 출처의 요청을 허용한다는데... 어려움(Fluttter의 chrome 요청에서 출처 오류 방지용)
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
