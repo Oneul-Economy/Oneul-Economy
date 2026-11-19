@@ -4,14 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/news.dart';
+import '../models/quiz.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
 import '../widgets/news_card.dart';
 import 'news_detail_screen.dart';
+import 'quiz_screen.dart';
 
 /// 앱에 넣어 둔 샘플 JSON 기사들. (서버 연결 전 임시)
 /// 기사가 늘어나면 여기에 파일을 추가하면 카드 상단 `< 1 / N >`으로 넘길 수 있다.
 const _mockNewsFiles = ['assets/mock/news.json'];
+const _mockQuizFile = 'assets/mock/quiz.json';
 
 /// 샘플 JSON에서 오늘의 기사 목록을 읽는다.
 Future<List<News>> loadNewsList() async {
@@ -23,19 +26,67 @@ Future<List<News>> loadNewsList() async {
   );
 }
 
+/// 샘플 JSON에서 용어 퀴즈를 읽는다. 실패하면 null을 반환한다.
+Future<Quiz?> loadQuiz() async {
+  try {
+    final text = await rootBundle.loadString(_mockQuizFile);
+    return Quiz.fromJson(jsonDecode(text) as Map<String, dynamic>);
+  } catch (e) {
+    debugPrint('[Quiz] 퀴즈 로드 실패 (파일 없음 또는 형식 오류): $e');
+    return null;
+  }
+}
+
+/// 해당 기사에 대해 용어 퀴즈를 열 수 있는지 판단하는 순수 함수.
+bool canOpenQuiz(News news, Quiz? quiz) {
+  if (quiz == null) return false;
+  if (quiz.quizzes.isEmpty) return false;
+  if (quiz.newsId != news.id) return false;
+  return true;
+}
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.initialNewsList,
+    this.initialQuiz,
+  });
+
+  /// 위젯 테스트에서 rootBundle 대신 데이터를 직접 주입할 때 사용.
+  final List<News>? initialNewsList;
+  final Quiz? initialQuiz;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // build()마다 다시 읽지 않도록 한 번만 만들어 둔다.
-  late final Future<List<News>> _newsFuture = loadNewsList();
+  late final Future<List<News>> _newsFuture;
+  Quiz? _quiz;
 
   /// 지금 보고 있는 기사 카드 (0부터).
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _newsFuture = widget.initialNewsList != null
+        ? Future.value(widget.initialNewsList)
+        : loadNewsList();
+
+    if (widget.initialNewsList != null) {
+      _quiz = widget.initialQuiz;
+    } else {
+      _loadQuizSeparately();
+    }
+  }
+
+  /// 뉴스와 별도로 퀴즈를 불러온다. 퀴즈 실패가 뉴스 카드에 영향을 주지 않게 하기 위함.
+  Future<void> _loadQuizSeparately() async {
+    final loaded = await loadQuiz();
+    if (!mounted) return;
+    setState(() => _quiz = loaded);
+  }
 
   void _openDetail(News news) {
     Navigator.push(
@@ -44,7 +95,34 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 퀴즈 화면은 아직 없어서 안내만 띄운다.
+  void _handleQuizTap(News news, int quizIndex) {
+    if (quizIndex != 1) {
+      _showQuizComingSoon(quizIndex);
+      return;
+    }
+
+    if (!canOpenQuiz(news, _quiz)) {
+      if (_quiz == null) {
+        debugPrint('[Quiz] 준비 중 처리: 퀴즈 데이터 없음 (파일 없음/형식 오류)');
+      } else if (_quiz!.quizzes.isEmpty) {
+        debugPrint('[Quiz] 준비 중 처리: 퀴즈 문제가 0개');
+      } else if (_quiz!.newsId != news.id) {
+        debugPrint(
+          '[Quiz] 준비 중 처리: news_id 불일치 (기사: ${news.id}, 퀴즈: ${_quiz!.newsId})',
+        );
+      }
+      _showQuizComingSoon(quizIndex);
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuizScreen(quiz: _quiz!, news: news),
+      ),
+    );
+  }
+
   void _showQuizComingSoon(int index) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -98,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     key: ValueKey(news.id),
                     news: news,
                     onTap: () => _openDetail(news),
-                    onQuizTap: _showQuizComingSoon,
+                    onQuizTap: (quizIndex) => _handleQuizTap(news, quizIndex),
                     pager: NewsCardPager(
                       index: _index,
                       total: list.length,
