@@ -2,9 +2,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/news.dart';
+import '../stores/saved_store.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
 import '../utils/term_matcher.dart';
+import 'save_button.dart';
 
 /// 용어에 밑줄을 친 본문 문단. 용어를 누르면 바텀시트로 쉬운 설명을 보여 준다.
 ///
@@ -123,21 +125,48 @@ Future<void> showTermSheet(BuildContext context, Term term) {
     ),
     builder: (context) => SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              term.word,
-              style: const TextStyle(
-                fontFamily: AppFonts.serif,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: AppColors.ink,
+            // 상단 가운데 작대기: 끌어내려 닫을 수 있다는 표시
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.muted.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 12),
+            // 용어 + 우측 저장 아이콘 (용어집에 담기)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    term.word,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.serif,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                ListenableBuilder(
+                  listenable: savedStore,
+                  builder: (context, _) => SaveButton(
+                    saved: savedStore.isTermSaved(term),
+                    onPressed: () => savedStore.toggleTerm(term),
+                    kind: '용어',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             Text(
               term.meaning,
               style: const TextStyle(
