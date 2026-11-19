@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:oneul_economy/theme/app_colors.dart';
 import 'package:oneul_economy/theme/app_fonts.dart';
 import '../models/news.dart';
+import '../utils/term_matcher.dart';
+import '../widgets/term_paragraph.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NewsDetailScreen extends StatelessWidget {
@@ -13,6 +15,7 @@ class NewsDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = news.source.publishedAt.toLocal();
+    final hits = findTermHits(news.body, news.terms);
 
     return Scaffold(
       backgroundColor: AppColors.paper,
@@ -42,10 +45,14 @@ class NewsDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
           
-            for (final paragraph in news.body)
+            for (var i = 0; i < news.body.length; i++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Text(paragraph, style: const TextStyle(fontSize: 16, height: 1.7)),
+                child: TermParagraph(
+                  text: news.body[i],
+                  hits: hits[i],
+                  style: const TextStyle(fontSize: 16, height: 1.7),
+                ),
             ),
 
             const SizedBox(height: 24),
