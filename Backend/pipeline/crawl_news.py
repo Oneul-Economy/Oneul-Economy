@@ -2,6 +2,7 @@ import json
 import os
 import re
 import time
+import sys
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 
@@ -26,8 +27,16 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 # ---------- 기사 목록 가져오기 (NAVER API HUB) ----------
 def fetch_news_list(query):
+    NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
+    NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
+    if not NAVER_CLIENT_ID:
+        sys.exit(".env에 NAVER_CLIENT_ID가 없습니다")
+    if not NAVER_CLIENT_SECRET:
+        sys.exit(".env에 NAVER_CLIENT_SECRET이 없습니다") # 시작할 때 키 확인
+
     res = requests.get(
         "https://naverapihub.apigw.ntruss.com/search/v1/news",
+
         params={"query": query, "display": 100, "sort": "date"},
         headers={
             "X-NCP-APIGW-API-KEY-ID": os.getenv("NAVER_CLIENT_ID"),
