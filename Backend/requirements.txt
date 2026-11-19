@@ -1,0 +1,16 @@
+beautifulsoup4==4.15.0
+certifi==2026.10.23
+charset-normalizer==3.5.2
+idna==3.20
+python-dotenv==1.2.4
+requests==2.34.2
+soupsieve==4.0.1
+typing_extensions==4.16.0
+urllib3==2.8.0
+
+
+sqlalchemy>=2.0
+fastapi
+uvicorn[standard]
+pytest
+httpx

@@ -4,7 +4,8 @@
 
 실행 방법
 
-모든 명령은 Backend/pipeline 폴더에서 실행합니다.
+1~3단계(가상환경, 설치)는 Backend 폴더에서, 4~5단계는 Backend/pipeline 폴더에서 실행합니다.
+가상환경(Backend/.venv)과 requirements.txt(Backend/requirements.txt)는 서버(Backend/db)와 함께 씁니다.
 
 1. 가상환경 만들기
 bash
@@ -27,6 +28,10 @@ Windows에서 "스크립트를 실행할 수 없습니다" 오류가 나면 한 
 3. 라이브러리 설치
 bash
 pip install -r requirements.txt
+cd pipeline
+
+설치 후 4단계부터는 Backend/pipeline 폴더로 이동해서 진행합니다.
+
 4. .env 만들기
 
 Backend/pipeline/.env 파일을 만들고 키를 넣습니다. 필요한 키 이름은 저장소 루트의 .env.example에 있습니다.
