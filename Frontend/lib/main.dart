@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_fonts.dart';
 
@@ -25,7 +25,7 @@ class OneulEconomyApp extends StatelessWidget {
         fontFamily: AppFonts.sans,
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const MainShell(),
     );
   }
 }

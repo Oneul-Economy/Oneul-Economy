@@ -48,4 +48,23 @@ void main() {
     expect(find.text(news.title), findsOneWidget);
     expect(find.text(news.body.first), findsOneWidget);
   });
+
+  testWidgets('카드에서 본문 읽기 버튼 말고 다른 곳을 누르면 이동하지 않는다', (tester) async {
+    var opened = false;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: NewsCard(news: news, onTap: () => opened = true),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text(news.title));
+    await tester.tap(find.text(news.summary));
+    await tester.pump();
+    expect(opened, isFalse);
+
+    await tester.tap(find.text('본문 읽기'));
+    expect(opened, isTrue);
+  });
 }

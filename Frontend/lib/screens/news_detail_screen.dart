@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:oneul_economy/theme/app_colors.dart';
 import 'package:oneul_economy/theme/app_fonts.dart';
 import '../models/news.dart';
+import '../stores/saved_store.dart';
+import '../utils/term_matcher.dart';
+import '../widgets/save_button.dart';
+import '../widgets/term_paragraph.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NewsDetailScreen extends StatelessWidget {
@@ -13,6 +17,7 @@ class NewsDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = news.source.publishedAt.toLocal();
+    final hits = findTermHits(news.body, news.terms);
 
     return Scaffold(
       backgroundColor: AppColors.paper,
@@ -22,6 +27,18 @@ class NewsDetailScreen extends StatelessWidget {
         backgroundColor: AppColors.paper,
         foregroundColor: AppColors.ink,
         elevation: 0,
+        actions: [
+          // 기사집에 담기
+          ListenableBuilder(
+            listenable: savedStore,
+            builder: (context, _) => SaveButton(
+              saved: savedStore.isNewsSaved(news),
+              onPressed: () => savedStore.toggleNews(news),
+              kind: '기사',
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
 
       body: SingleChildScrollView(
@@ -42,10 +59,14 @@ class NewsDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
           
-            for (final paragraph in news.body)
+            for (var i = 0; i < news.body.length; i++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Text(paragraph, style: const TextStyle(fontSize: 16, height: 1.7)),
+                child: TermParagraph(
+                  text: news.body[i],
+                  hits: hits[i],
+                  style: const TextStyle(fontSize: 16, height: 1.7),
+                ),
             ),
 
             const SizedBox(height: 24),
@@ -55,8 +76,18 @@ class NewsDetailScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F4EF), 
-                  borderRadius: BorderRadius.circular(12),
+                  // 흰색 50%를 배경(paper)에 섞은 색: 배경보다 살짝만 밝게.
+                  // 반투명으로 칠하면 아래 그림자가 비쳐서 미리 섞은 불투명 색을 씀
+                  color: Color.alphaBlend(Colors.white.withValues(alpha: 0.5), AppColors.paper),
+                  borderRadius: BorderRadius.circular(16),
+                  // 테두리 대신 옅은 그림자로 배경과의 경계를 흐리게
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.ink.withValues(alpha: 0.06),
+                      blurRadius: 24,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
 
                 child: Column(
@@ -69,15 +100,22 @@ class NewsDetailScreen extends StatelessWidget {
 
                     const SizedBox(height: 12),
                     
-                    for (Term term in news.terms)
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(color: AppColors.ink, fontSize: 14, height: 1.5),
+                    for (final (i, term) in news.terms.indexed)
+                      Padding(
+                        // 마지막 용어 아래에는 간격을 두지 않음
+                        padding: EdgeInsets.only(bottom: i == news.terms.length - 1 ? 0 : 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextSpan(text: '${term.word} ', 
-                            style: TextStyle(fontWeight: FontWeight.bold)
+                            Text(
+                              term.word,
+                              style: const TextStyle(color: AppColors.ink, fontSize: 14, fontWeight: FontWeight.bold),
                             ),
-                            TextSpan(text: term.meaning),
+                            const SizedBox(height: 4),
+                            Text(
+                              term.meaning,
+                              style: const TextStyle(color: AppColors.ink, fontSize: 14, height: 1.5),
+                            ),
                           ],
                         ),
                       ),

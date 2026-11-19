@@ -9,10 +9,18 @@ import '../theme/app_fonts.dart';
 import '../widgets/news_card.dart';
 import 'news_detail_screen.dart';
 
-/// 앱에 넣어 둔 샘플 JSON에서 뉴스 1건을 읽는다. (서버 연결 전 임시)
-Future<News> loadNews() async {
-  final text = await rootBundle.loadString('assets/mock/news.json');
-  return News.fromJson(jsonDecode(text) as Map<String, dynamic>);
+/// 앱에 넣어 둔 샘플 JSON 기사들. (서버 연결 전 임시)
+/// 기사가 늘어나면 여기에 파일을 추가하면 카드 상단 `< 1 / N >`으로 넘길 수 있다.
+const _mockNewsFiles = ['assets/mock/news.json'];
+
+/// 샘플 JSON에서 오늘의 기사 목록을 읽는다.
+Future<List<News>> loadNewsList() async {
+  return Future.wait(
+    _mockNewsFiles.map((path) async {
+      final text = await rootBundle.loadString(path);
+      return News.fromJson(jsonDecode(text) as Map<String, dynamic>);
+    }),
+  );
 }
 
 class HomeScreen extends StatefulWidget {
@@ -24,7 +32,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   // build()마다 다시 읽지 않도록 한 번만 만들어 둔다.
-  late final Future<News> _newsFuture = loadNews();
+  late final Future<List<News>> _newsFuture = loadNewsList();
+
+  /// 지금 보고 있는 기사 카드 (0부터).
+  int _index = 0;
 
   void _openDetail(News news) {
     Navigator.push(
@@ -46,13 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.paper,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 10, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           children: [
             const _HomeHeader(),
             const SizedBox(height: 14),
             Container(height: 1.5, color: AppColors.ink),
             const SizedBox(height: 20),
-            FutureBuilder<News>(
+            FutureBuilder<List<News>>(
               future: _newsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
@@ -72,11 +83,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 }
-                final news = snapshot.data!;
-                return NewsCard(
-                  news: news,
-                  onTap: () => _openDetail(news),
-                  onQuizTap: _showQuizComingSoon,
+                final list = snapshot.data!;
+                if (list.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: Text('오늘의 기사가 아직 없어요.')),
+                  );
+                }
+                final news = list[_index];
+                // 카드가 바뀔 때 살짝 페이드
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: NewsCard(
+                    key: ValueKey(news.id),
+                    news: news,
+                    onTap: () => _openDetail(news),
+                    onQuizTap: _showQuizComingSoon,
+                    pager: NewsCardPager(
+                      index: _index,
+                      total: list.length,
+                      onPrev: () => setState(() => _index--),
+                      onNext: () => setState(() => _index++),
+                    ),
+                  ),
                 );
               },
             ),
