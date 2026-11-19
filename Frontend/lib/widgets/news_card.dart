@@ -41,90 +41,91 @@ class NewsCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${news.stockName} · ${news.readMinutes}분',
-                      style: TextStyle(
-                        fontFamily: AppFonts.sans,
-                        color: AppColors.gold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.6,
-                      ),
+        padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${news.stockName} · ${news.readMinutes}분',
+                    style: TextStyle(
+                      fontFamily: AppFonts.sans,
+                      color: AppColors.gold,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.6,
                     ),
                   ),
-                  // `< 1 / N >`. 기사가 1개면 `1 / 1`에 화살표는 둘 다 비활성
-                  if (pager != null) _Pager(pager: pager!),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Text(
-                news.title,
-                style: TextStyle(
-                  fontFamily: AppFonts.serif,
-                  color: AppColors.paper,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  height: 1.25,
-                  letterSpacing: -0.8,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                news.summary,
-                style: TextStyle(
-                  fontFamily: AppFonts.sans,
-                  color: AppColors.onInkMuted,
-                  fontSize: 14,
-                  height: 1.6,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(
-                height: 1,
-                thickness: 1,
-                color: AppColors.inkDivider,
-              ),
-              for (var i = 0; i < _quizzes.length; i++)
-                _QuizRow(
-                  number: i + 1,
-                  label: _quizzes[i].label,
-                  title: _quizzes[i].title,
-                  onTap: () => onQuizTap?.call(i),
-                ),
-              const SizedBox(height: 18),
-              // 본문으로 가는 곳은 이 버튼 하나뿐 (카드 나머지 부분은 눌러도 이동 안 함)
-              Material(
+                // `< 1 / N >`. 기사가 1개면 `1 / 1`에 화살표는 둘 다 비활성
+                if (pager != null) _Pager(pager: pager!),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              news.title,
+              style: TextStyle(
+                fontFamily: AppFonts.serif,
                 color: AppColors.paper,
-                borderRadius: BorderRadius.circular(14),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: onTap,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(14),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '본문 읽기',
-                      style: TextStyle(
-                        fontFamily: AppFonts.sans,
-                        color: AppColors.ink,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                height: 1.25,
+                letterSpacing: -0.8,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              news.summary,
+              style: TextStyle(
+                fontFamily: AppFonts.sans,
+                color: AppColors.onInkMuted,
+                fontSize: 14,
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Divider(
+              height: 1,
+              thickness: 1,
+              color: AppColors.inkDivider,
+            ),
+            for (var i = 0; i < _quizzes.length; i++)
+              _QuizRow(
+                number: i + 1,
+                label: _quizzes[i].label,
+                title: _quizzes[i].title,
+                isComingSoon: i != 1, // 0(OX), 2(생각)은 준비 중, 1(용어)만 활성
+                onTap: () => onQuizTap?.call(i),
+              ),
+            const SizedBox(height: 18),
+            // 본문으로 가는 곳은 이 버튼 하나뿐 (카드 나머지 부분은 눌러도 이동 안 함)
+            Material(
+              color: AppColors.paper,
+              borderRadius: BorderRadius.circular(14),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '본문 읽기',
+                    style: TextStyle(
+                      fontFamily: AppFonts.sans,
+                      color: AppColors.ink,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }
@@ -188,19 +189,21 @@ class _Pager extends StatelessWidget {
   }
 }
 
-/// 카드 안 퀴즈 한 줄: `01 | 라벨 / 제목 | 빈 원` (Figma 01~03 행 스타일).
+/// 카드 안 퀴즈 한 줄: `01 | 라벨 / 제목 | 빈 원(또는 준비 중)` (Figma 01~03 행 스타일).
 class _QuizRow extends StatelessWidget {
   const _QuizRow({
     required this.number,
     required this.label,
     required this.title,
     required this.onTap,
+    this.isComingSoon = false,
   });
 
   final int number;
   final String label;
   final String title;
   final VoidCallback onTap;
+  final bool isComingSoon;
 
   @override
   Widget build(BuildContext context) {
@@ -211,64 +214,78 @@ class _QuizRow extends StatelessWidget {
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: AppColors.inkDivider)),
         ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 30,
-              child: Text(
-                number.toString().padLeft(2, '0'),
-                style: TextStyle(
-                  fontFamily: AppFonts.serif,
-                  color: AppColors.gold,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontFamily: AppFonts.sans,
-                      color: AppColors.onInkSubtle,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: AppFonts.sans,
-                      color: AppColors.paper,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 14),
-            // Figma 빈 원 아이콘: 20×20 안에 지름 17, 선 두께 1.5
-            SizedBox.square(
-              dimension: 20,
-              child: Center(
-                child: Container(
-                  width: 17,
-                  height: 17,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.inkRing, width: 1.5),
+        child: Opacity(
+          opacity: isComingSoon ? 0.45 : 1.0,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 30,
+                child: Text(
+                  number.toString().padLeft(2, '0'),
+                  style: TextStyle(
+                    fontFamily: AppFonts.serif,
+                    color: AppColors.gold,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontFamily: AppFonts.sans,
+                        color: AppColors.onInkSubtle,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: AppFonts.sans,
+                        color: AppColors.paper,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 14),
+              if (isComingSoon)
+                Text(
+                  '준비 중',
+                  style: TextStyle(
+                    fontFamily: AppFonts.sans,
+                    color: AppColors.onInkSubtle,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              else
+                // Figma 빈 원 아이콘: 20×20 안에 지름 17, 선 두께 1.5
+                SizedBox.square(
+                  dimension: 20,
+                  child: Center(
+                    child: Container(
+                      width: 17,
+                      height: 17,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.inkRing, width: 1.5),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
