@@ -56,7 +56,6 @@ def fetch_news_list(query):
         if "n.news.naver.com" not in item["link"]:  # 네이버 뉴스 링크만
             continue
         item["title"] = title #item에 title 추가함
-
         articles.append(item)
         if len(articles) >= MAX_ARTICLES:
             break
@@ -143,6 +142,7 @@ def save_json(data, path=OUTPUT_PATH):
 # ---------- 실행 ----------
 if __name__ == "__main__":
     articles = fetch_news_list(STOCK_NAME)
+    articles.insert(1, {"link": "https://this-does-not-exist.invalid/news/1"})  # 테스트용 가짜 주소
     print(f"목록 {len(articles)}개 선택됨\n")
 
     raw_articles = []
@@ -182,6 +182,6 @@ if __name__ == "__main__":
     finally: # 항상 실행됨
         save_json(raw_articles)
         if failed:
-            print(f"실패 {len(failed)}개: "+", ".json(failed))
+            print(f"실패 {len(failed)}개: "+", ".join(failed))
 
 
