@@ -8,6 +8,10 @@ from email.utils import parsedate_to_datetime
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from pathlib import Path
+HERE = Path(__file__).parent
+load_dotenv(HERE / ".env")
+OUTPUT_PATH = HERE / "output" / "raw-article.json"
 
 load_dotenv()
 
@@ -16,7 +20,6 @@ KST = timezone(timedelta(hours=9))
 STOCK_NAME = "삼성전자"
 STOCK_CODE = "005930"  # 문자열! 숫자로 쓰면 앞의 00이 사라짐
 MAX_ARTICLES = 5
-OUTPUT_PATH = "output/raw-article.json"
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
