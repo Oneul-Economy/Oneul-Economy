@@ -100,12 +100,16 @@ def fetch_article(url):
         "press": extract_press(soup),
     }
 
+def naver_article_key(url):
+    m = re.search(r"/article/(\d+)/(\d+)", url)
+    return f"{m.group(1)}-{m.group(2)}" if m else None
 
 # ---------- RawArticle 변환 / 저장 ----------
 def to_raw_article(item, article, seq):
     published = parsedate_to_datetime(item["pubDate"]).astimezone(KST)
+    key = naver_article_key(item["link"])
     return {
-        "id": f"{published:%Y%m%d}-{STOCK_CODE}-{seq:03d}",
+        "id": f"{published:%Y%m%d}-{STOCK_CODE}-{key}",
         "stock_code": STOCK_CODE,
         "stock_name": STOCK_NAME,
         "press": article["press"],
