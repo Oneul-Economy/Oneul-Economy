@@ -116,12 +116,16 @@ def fetch_article(url):
         "press": extract_press(soup),
     }
 
+def naver_article_key(url):
+    # https://n.news.naver.com/mnews/article/050/0000112859?sid=101 → "050-0000112859" (언론사번호-기사번호)
+    m = re.search(r"/article/(\d+)/(\d+)", url)
+    return f"{m.group(1)}-{m.group(2)}" if m else None
 
 # ---------- RawArticle 변환 / 저장 ----------
-def to_raw_article(item, article, seq):
+def to_raw_article(item, article, key):
     published = parsedate_to_datetime(item["pubDate"]).astimezone(KST)
     return {
-        "id": f"{published:%Y%m%d}-{STOCK_CODE}-{seq:03d}",
+        "id": f"{published:%Y%m%d}-{STOCK_CODE}-{key}",
         "stock_code": STOCK_CODE,
         "stock_name": STOCK_NAME,
         "press": article["press"],
@@ -142,16 +146,26 @@ def save_json(data, path=OUTPUT_PATH):
 # ---------- 실행 ----------
 if __name__ == "__main__":
     articles = fetch_news_list(STOCK_NAME)
-    articles.insert(1, {"link": "https://this-does-not-exist.invalid/news/1"})  # 테스트용 가짜 주소
     print(f"목록 {len(articles)}개 선택됨\n")
 
     raw_articles = []
-    seq_by_date = {}  # 날짜별 순번
+    seen = set()  # 이번 실행에서 이미 본 기사 번호 (같은 기사가 목록에 두 번 나올 때 거르기)
     failed = [] # 실패한 링크 저장
 
     try:
         for item in articles:
             link = item["link"]
+
+            key = naver_article_key(link)  # "050-0000112859"
+            if key is None:
+                print(f"기사 번호 없음: {link}")
+                failed.append(link)
+                continue
+            if key in seen:
+                print(f"중복 기사 건너뜀: {link}")
+                continue
+            seen.add(key)
+
             time.sleep(1) #요청 사이 1초 쉬기
 
             try:
@@ -174,9 +188,7 @@ if __name__ == "__main__":
             if not article["title"]:
                 article["title"] = item["title"] # 제목이 없으면 item["title"]을 넣는다.
 
-            date = parsedate_to_datetime(item["pubDate"]).astimezone(KST).strftime("%Y%m%d")
-            seq_by_date[date] = seq_by_date.get(date, 0) + 1
-            raw_articles.append(to_raw_article(item, article, seq_by_date[date]))
+            raw_articles.append(to_raw_article(item, article, key))
             print("수집:", article["press"], "|", article["title"])
 
     finally: # 항상 실행됨
