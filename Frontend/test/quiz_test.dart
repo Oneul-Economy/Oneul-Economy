@@ -120,15 +120,15 @@ void main() {
     // 해설 표시 확인
     expect(find.text('문제 1 해설입니다.'), findsOneWidget);
 
-    // 정답 보기 강조(배경색 AppColors.ink) 확인
+    // 정답 보기 강조(테두리 AppColors.ink) 확인
     final correctButton = tester.widget<OutlinedButton>(
       find.ancestor(
         of: find.text('정답1'),
         matching: find.byType(OutlinedButton),
       ),
     );
-    final bgColor = correctButton.style?.backgroundColor?.resolve({});
-    expect(bgColor, AppColors.ink);
+    final side = correctButton.style?.side?.resolve({});
+    expect(side?.color, AppColors.ink);
   });
 
   testWidgets('4. 마지막 문제 뒤 결과 화면에 점수(2/3)가 보인다', (tester) async {
@@ -144,13 +144,13 @@ void main() {
     // 1번: 정답
     await tester.tap(find.text('정답1'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('다음'));
+    await tester.tap(find.text('다음 문제'));
     await tester.pumpAndSettle();
 
     // 2번: 오답
     await tester.tap(find.text('오답2-1'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('다음'));
+    await tester.tap(find.text('다음 문제'));
     await tester.pumpAndSettle();
 
     // 3번: 정답
