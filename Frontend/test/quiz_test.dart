@@ -81,7 +81,7 @@ void main() {
     expect(quiz.quizzes.first.choices.length, 4);
   });
 
-  testWidgets('2. 용어 행을 누르면 퀴즈 화면으로 이동하고, OX 행은 이동하지 않는다', (tester) async {
+  testWidgets('2. 용어 행을 누르면 퀴즈 화면으로 이동하고, 생각 퀴즈 행은 이동하지 않는다', (tester) async {
     final news = _sampleNews();
     final quiz = _sampleQuiz();
 
@@ -92,8 +92,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // OX 행 클릭 → 이동하지 않음
-    await tester.tap(find.text('OX 퀴즈 · 30초'));
+    // 생각 퀴즈 행 클릭 → 이동하지 않음
+    await tester.tap(find.text('생각 퀴즈 · 1분'));
     await tester.pumpAndSettle();
     expect(find.byType(QuizScreen), findsNothing);
 
