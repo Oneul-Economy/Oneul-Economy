@@ -327,7 +327,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                 ),
               ),
               const SizedBox(height: 28),
-              _FieldLabel('이메일'),
+              _fieldLabel('이메일'),
               const SizedBox(height: 6),
               TextField(
                 controller: _emailController,
@@ -337,7 +337,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _FieldLabel('비밀번호'),
+              _fieldLabel('비밀번호'),
               const SizedBox(height: 6),
               TextField(
                 controller: _passwordController,
@@ -507,14 +507,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 22),
-              _FieldLabel('이메일'),
+              _fieldLabel('이메일'),
               const SizedBox(height: 6),
               TextField(
                 controller: _emailController,
                 decoration: _inputDecoration(hint: 'jimin@gmail.com'),
               ),
               const SizedBox(height: 16),
-              _FieldLabel('비밀번호'),
+              _fieldLabel('비밀번호'),
               const SizedBox(height: 6),
               TextField(
                 controller: _pwController,
@@ -531,7 +531,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              _FieldLabel('비밀번호 확인'),
+              _fieldLabel('비밀번호 확인'),
               const SizedBox(height: 6),
               TextField(
                 controller: _pwConfirmController,
@@ -741,14 +741,14 @@ class _OnboardingBasicInfoScreenState extends State<OnboardingBasicInfoScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              _FieldLabel('이름'),
+              _fieldLabel('이름'),
               const SizedBox(height: 6),
               TextField(
                 controller: _nameController,
                 decoration: _inputDecoration(hint: '이름 입력'),
               ),
               const SizedBox(height: 16),
-              _FieldLabel('나이'),
+              _fieldLabel('나이'),
               const SizedBox(height: 6),
               TextField(
                 controller: _ageController,
@@ -759,7 +759,7 @@ class _OnboardingBasicInfoScreenState extends State<OnboardingBasicInfoScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              _FieldLabel('연 수입'),
+              _fieldLabel('연 수입'),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -948,7 +948,7 @@ class _OnboardingInterestsScreenState extends State<OnboardingInterestsScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      _FieldLabel('인기 종목'),
+                      _fieldLabel('인기 종목'),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
@@ -967,7 +967,7 @@ class _OnboardingInterestsScreenState extends State<OnboardingInterestsScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 22),
-                      _FieldLabel('관심 키워드'),
+                      _fieldLabel('관심 키워드'),
                       const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
@@ -1095,7 +1095,7 @@ class OnboardingStepBar extends StatelessWidget {
   }
 }
 
-Widget _FieldLabel(String text) {
+Widget _fieldLabel(String text) {
   return Text(
     text,
     style: TextStyle(

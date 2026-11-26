@@ -96,7 +96,7 @@ class NewsCard extends StatelessWidget {
                 number: i + 1,
                 label: _quizzes[i].label,
                 title: _quizzes[i].title,
-                isComingSoon: i != 1, // 0(OX), 2(생각)은 준비 중, 1(용어)만 활성
+                isComingSoon: i == 2, // 2(생각)은 준비 중, 나머지 활성
                 onTap: () => onQuizTap?.call(i),
               ),
             const SizedBox(height: 18),

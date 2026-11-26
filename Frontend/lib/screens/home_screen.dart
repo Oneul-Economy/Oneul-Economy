@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/news.dart';
+import '../models/ox_quiz.dart';
 import '../models/quiz.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
 import '../widgets/news_card.dart';
 import 'news_detail_screen.dart';
+import 'ox_quiz_screen.dart';
 import 'quiz_screen.dart';
 
 /// 앱에 넣어 둔 샘플 JSON 기사들. (서버 연결 전 임시)
@@ -95,7 +97,44 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  OxQuiz _buildSampleOxQuiz(News news) {
+    return OxQuiz(
+      newsId: news.id,
+      quizzes: const [
+        OxQuizItem(
+          id: 'ox-1',
+          question: '기사 내용에 따르면, 새로운 노동조합 설립은 기존 임금교섭 구도에 영향을 줄 수 있다.',
+          answer: true,
+          hint: '복수노조 체제에서의 교섭 창구 단일화를 떠올려 보세요.',
+          explanation: '새 노조가 설립되면 대표 교섭 노조 선정과 임금교섭 구도에 변화가 생길 수 있습니다.',
+          evidence: '기사 요약: 임금교섭 구도가 바뀔 수 있어요.',
+        ),
+        OxQuizItem(
+          id: 'ox-2',
+          question: '환율이 상승하면 수출 비중이 높은 기업의 원화 환산 매출은 항상 감소한다.',
+          answer: false,
+          hint: '달러로 번 돈을 원화로 바꿀 때를 생각해 보세요.',
+          explanation: '원·달러 환율이 오르면 같은 달러 매출이라도 원화로 환산했을 때 금액이 커져 수출 기업에 유리할 수 있습니다.',
+          evidence: '수출 기업은 환율 상승 시 원화 기준 매출이 늘어나는 효과가 있습니다.',
+        ),
+      ],
+    );
+  }
+
   void _handleQuizTap(News news, int quizIndex) {
+    if (quizIndex == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OxQuizScreen(
+            quiz: _buildSampleOxQuiz(news),
+            news: news,
+          ),
+        ),
+      );
+      return;
+    }
+
     if (quizIndex != 1) {
       _showQuizComingSoon(quizIndex);
       return;

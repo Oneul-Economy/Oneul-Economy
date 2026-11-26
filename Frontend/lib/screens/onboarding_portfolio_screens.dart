@@ -532,9 +532,9 @@ class OnboardingPortfolioResultScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Expanded(flex: 3, child: _HeaderText('종목')),
-                        Expanded(flex: 2, child: _HeaderText('수량', right: true)),
-                        Expanded(flex: 3, child: _HeaderText('평균 단가', right: true)),
+                        Expanded(flex: 3, child: _headerText('종목')),
+                        Expanded(flex: 2, child: _headerText('수량', right: true)),
+                        Expanded(flex: 3, child: _headerText('평균 단가', right: true)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -632,7 +632,7 @@ class OnboardingPortfolioResultScreen extends StatelessWidget {
   }
 }
 
-Widget _HeaderText(String text, {bool right = false}) {
+Widget _headerText(String text, {bool right = false}) {
   return Text(
     text,
     textAlign: right ? TextAlign.right : TextAlign.left,
