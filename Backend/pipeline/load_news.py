@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from db.database import SessionLocal
-from db.models import News, NewsTerm
+from db.models import News, NewsTerm, RawArticle
 
 
 def expand(patterns):
@@ -60,13 +60,14 @@ def main(patterns):
     # 2) DB에 넣기
     with SessionLocal() as session:
         for news_id, items in by_id.items():
-            # TODO 2:
-            #  - items가 2개 이상이면: 경고 출력(파일 이름들), skipped += 1, 넣지 않고 다음으로
-            #  - 아니면: session.merge(items[0][1]), loaded += 1
-            if(len(items) > 1):
+            if len(items) > 1:
                 print(f"경고: {news_id}가 여러 번 나옴: {[f for f, _ in items]}")
                 skipped += 1
                 continue
+
+            if session.get(RawArticle, news_id) is None:   # ← 추가
+                print(f"원문 없음: {news_id}")
+
             session.merge(items[0][1])
             loaded += 1
         session.commit()
