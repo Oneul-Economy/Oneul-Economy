@@ -55,6 +55,31 @@ echo $?                      # Windows PowerShell은 echo $LASTEXITCODE
 - **실패한 결과는 앱(`Frontend/assets/mock/`)이나 DB(`load_news`)에 넣지 않음**
 - 고치는 방법: 그 기사를 `rewrite.py`로 다시 첨삭 → `check.py`로 재검사 → 통과하면 사용
 
+## 용어 퀴즈 (`quiz.py`)
+
+첨삭 결과(`News`)의 `terms` 앞에서부터 최대 3개로 4지선다 용어 퀴즈를 만든다. 형식은 `docs/data-format.md`의 `3. Quiz`.
+
+```bash
+python quiz.py "results/*-v2.json" --provider claude
+python quiz.py results/20261105-005930-366-0001202773-claude-v2.json --no-verify   # 2차 검증 끄기
+```
+
+- 결과: `results/quiz/{news_id}-quiz-{모델}-{프롬프트 버전}.json` (기사 1건 = 파일 1개). `results/*-v2.json` 패턴에 섞이지 않게 하위 폴더
+- 모델은 정답 1개와 오답 3개를 따로 주고, 보기 순서와 `answer_index`는 코드가 정함 (한 기사 안에서 정답 위치가 겹치지 않게)
+- **자동 검사** (하나라도 걸리면 그 기사의 퀴즈 파일을 저장하지 않음)
+  - 보기가 서로 다른 4개, `answer_index` 0~3
+  - `word`가 기사 `terms`에 있음, 같은 `word`의 문제가 두 번 나오지 않음
+  - 보기에 `word`가 그대로 들어 있지 않음 (문제에는 들어가도 됨)
+  - 정답 보기 길이 ≤ 오답 평균 × 1.5
+  - 투자 권유 표현 없음 (`check.py`의 `INVEST`)
+- **2차 검증** (기본으로 켜짐, `--no-verify`로 끔): 정답을 숨긴 채 모델에게 기사와 문제를 주고 다시 풀게 함. 다른 답을 고르거나 "맞는 보기가 둘 이상"이라고 하면 실패. 기사당 호출이 1번 더 듦 (생성 1번 + 검증 1번)
+- 실패: 나머지 기사는 계속 처리하고, 마지막에 실패 목록 출력 후 **종료 코드 1**
+  ```
+  퀴즈 실패 1개
+  - 20261105-005930-366-0001202773-q2: 보기에 정답 단어가 들어 있음 ("공동교섭단")
+  ```
+  고치는 방법: 그 기사만 `quiz.py`로 다시 생성 → 통과하면 사용. **실패한 퀴즈는 앱(`Frontend/assets/mock/quiz.json`)·DB에 넣지 않음**
+
 ## 파일
 
 | 파일 | 내용 |
@@ -62,6 +87,7 @@ echo $?                      # Windows PowerShell은 echo $LASTEXITCODE
 | `guidelines.md` | 첨삭 기준 |
 | `prompts/rewrite_v*.md` | 프롬프트. `{title}`, `{content}` 자리에 원문이 들어감 |
 | `rewrite.py` | 첨삭 실행. `id`·`stock_name`·`source`는 원문에서 복사, `read_minutes`는 코드로 계산 |
+| `quiz.py`, `prompts/quiz_*.md` | 용어 퀴즈 생성·검사·2차 검증 |
 | `check.py` | 결과 자동 점검 (숫자, 용어, 권유 표현, 분량). 원문은 `samples/`와 `Backend/pipeline/output/`에서 id로 찾음 |
 | `samples/` | 입력 기사 (#6 크롤러 결과) |
 | `results/` | 결과와 평가 표 (`results/README.md`) |

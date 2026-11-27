@@ -60,3 +60,32 @@
 | `body` | 문자열 배열 | 첨삭한 본문. 배열 한 칸 = 문단 하나 | 본문 |
 | `terms` | 배열 | 어려운 용어 2~4개. `word`(용어), `meaning`(쉬운 설명) | 본문 아래 용어 박스 |
 | `source` | 객체 | 원문 정보. `press`, `url`, `published_at` | 본문 맨 아래 출처 |
+
+### 3. `Quiz` — 용어 퀴즈 = 퀴즈 화면 입력
+`News`와 별도 파일. `news_id`로 기사와 연결. AI 결과: `AI/results/quiz/{news_id}-quiz-{provider}-{ver}.json`, 앱 목업: `Frontend/assets/mock/quiz.json`
+```json
+{
+  "news_id": "20261105-005930-366-0001202773",
+  "quizzes": [
+    {
+      "id": "20261105-005930-366-0001202773-q1",
+      "word": "성과급",
+      "question": "다음 중 '성과급'의 뜻으로 맞는 것은?",
+      "choices": ["보기 1", "보기 2", "보기 3", "보기 4"],
+      "answer_index": 1,
+      "explanation": "회사 성과에 따라 월급 외에 더 주는 보너스예요."
+    }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `news_id` | 문자열 | 퀴즈를 만든 기사의 id (`News.id`와 같음) |
+| `quizzes` | 배열 | 기사당 최대 3문제. `News.terms` 앞에서부터 용어 하나당 한 문제 |
+| `quizzes[].id` | 문자열 | `{news_id}-q{번호}` (1부터). 결과를 저장할 때 키로 씀 |
+| `quizzes[].word` | 문자열 | `News.terms[].word`와 글자까지 같음 |
+| `quizzes[].question` | 문자열 | 문제. 용어 단어가 들어가도 됨 |
+| `quizzes[].choices` | 문자열 배열 | 보기 4개, 서로 다름. 용어 단어는 보기에 들어가지 않음 |
+| `quizzes[].answer_index` | 숫자 | 정답 보기 위치 (0~3). 코드가 보기를 섞은 뒤 정함 |
+| `quizzes[].explanation` | 문자열 | 정답 해설, "~해요"체 |
