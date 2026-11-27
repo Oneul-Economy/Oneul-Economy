@@ -173,6 +173,9 @@ def main():
     except ScanError as e:
         print(f"실패: {e}", file=sys.stderr)
         sys.exit(1)
+    except Exception as e:  # API 오류(키 없음, 이미지가 너무 큼, 네트워크 등): 추적 정보 대신 한 줄로
+        print(f"실패: {type(e).__name__}: {e}", file=sys.stderr)
+        sys.exit(1)
     if args.expect:
         sys.exit(compare(holdings, json.loads(args.expect.read_text(encoding="utf-8"))))
     text = json.dumps(holdings, ensure_ascii=False, indent=2)
