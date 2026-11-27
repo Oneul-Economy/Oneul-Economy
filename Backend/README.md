@@ -144,3 +144,25 @@ DATABASE_URL=sqlite:////절대/경로/test.db python -m db.init_db
 
 - 새 테이블 추가: `python -m db.init_db`만 다시 실행하면 됩니다.
 - 기존 테이블의 열을 바꿈: `data/oneul.db`를 지우고 `python -m db.init_db`를 다시 실행한 뒤, 데이터를 다시 넣습니다.
+
+## 로그인 (Firebase)
+
+앱은 Firebase로 로그인하고, 서버는 앱이 보낸 ID 토큰만 확인합니다. 사용자 데이터(프로필, 저장, 일지)는 Firestore에 있고 서버 DB에는 저장하지 않습니다.
+
+### 설정
+1. Firebase 서비스 계정 키(JSON)를 `Backend/firebase-service-account.json`으로 저장 (키는 형유진에게 개인적으로 받기, **절대 커밋 금지**)
+2. `Backend/.env`에 경로 추가
+   ```
+   FIREBASE_CREDENTIALS=firebase-service-account.json
+   ```
+
+키가 없어도 서버는 켜지고 `/news`는 동작합니다. 로그인이 필요한 API만 `500 firebase not configured`가 됩니다.
+
+### API
+| 요청 | 응답 |
+| --- | --- |
+| `GET /me` (헤더 `Authorization: Bearer <ID 토큰>`) | `{"uid": "...", "email": "..."}` |
+| 토큰 없음 | `401 {"detail": "login required"}` |
+| 잘못되거나 만료된 토큰 | `401 {"detail": "invalid token"}` |
+
+로그인이 필요한 API를 새로 만들 때는 `user: CurrentUser = Depends(get_current_user)`를 붙이면 됩니다 (`api/auth.py`).
