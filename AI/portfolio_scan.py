@@ -10,6 +10,9 @@
   from portfolio_scan import scan
   holdings = scan(image_bytes, "image/png", provider="claude")   # {"holdings": [...]}
 
+- 캡처 원본은 저장하지 않음: 이 모듈은 이미지를 메모리에서 AI API로 보내기만 하고 파일·로그에 남기지 않음.
+  서버도 업로드를 디스크에 저장하지 말고 bytes 그대로 scan()에 넘긴 뒤 버릴 것. 저장하는 것은 결과 JSON(보유 종목)뿐
+- 오류 메시지에도 수량·금액 같은 값은 넣지 않음 (위치와 이유만)
 - 화면에서 못 읽은 값은 추측하지 않고 null (#43 규칙)
 - 결과는 #43 규칙(이름 1~100자, 종목코드 20자 이하, 숫자 0 이상, 통화 대문자 3글자, 최대 200개)으로 검사.
   규칙에 안 맞으면 ScanError, CLI는 종료 코드 1
@@ -136,7 +139,12 @@ def normalize(scanned: ScannedHoldings) -> dict:
     try:
         return HoldingsIn.model_validate({"holdings": rows}).model_dump()
     except ValidationError as e:
-        raise ScanError(f"#43 규칙에 안 맞음: {e}") from e
+        # 오류 메시지에 입력값(수량·금액)을 넣지 않음: 서버 로그에 계좌 정보가 남지 않게
+        problems = "; ".join(
+            f"{'.'.join(map(str, err['loc']))}: {err['msg']}"
+            for err in e.errors(include_input=False, include_url=False)
+        )
+        raise ScanError(f"#43 규칙에 안 맞음: {problems}") from None
 
 
 def scan(image: bytes, media_type: str, provider: str = "claude", model: str | None = None) -> dict:

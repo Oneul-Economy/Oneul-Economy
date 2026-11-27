@@ -106,6 +106,11 @@ python portfolio_scan.py samples/portfolio/kr-basic.png --expect samples/portfol
 
 - 서버(#46 `POST /portfolio/scan`)에서는 `from portfolio_scan import scan` → `scan(이미지 bytes, "image/png", provider="claude")`
 - 화면에서 못 읽은 값은 **추측하지 않고 `null`** (#43 규칙). 이름만 보이면 `stock_code`도 `null`
+- **캡처 원본은 저장하지 않음**
+  - 이 모듈은 이미지를 메모리에서 AI API로 보내기만 하고 파일·로그에 남기지 않음. 저장하는 것은 결과 JSON(보유 종목)뿐
+  - 서버(`POST /portfolio/scan`)도 업로드를 디스크나 DB에 저장하지 말고, 받은 bytes를 바로 `scan()`에 넘긴 뒤 버리기
+  - 오류 메시지에도 수량·금액 같은 값은 넣지 않음 (어느 칸이 왜 틀렸는지만). 서버 로그에 계좌 정보가 남지 않게
+  - 캡처는 선택한 AI 회사(Anthropic / Google / OpenAI) API로 전송됨. 그 회사 쪽 보관 정책은 각 회사 API 약관을 따름
 - 결과는 #43 규칙(이름 1~100자, 코드 20자 이하, 숫자 0 이상, 통화 대문자 3글자, 최대 200개)으로 검사. 안 맞거나 png·jpeg·webp·gif가 아니면 `ScanError`, CLI는 **종료 코드 1**
 - 보유 종목 화면이 아니면 `{"holdings": []}`
 - 테스트 이미지: `samples/portfolio/`의 가짜 증권 앱 캡처 3장과 정답 JSON. `--expect`로 비교하면 다른 칸을 출력하고 종료 코드 1. 다시 만들려면 `pip install pillow` 후 `python samples/portfolio/make_samples.py`
