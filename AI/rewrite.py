@@ -82,14 +82,19 @@ def call_openai(prompt: str, model: str) -> Rewrite:
 PROVIDERS = {"gemini": call_gemini, "claude": call_claude, "openai": call_openai}
 
 
-def load_articles(paths: list[str]) -> list[dict]:
-    """파일마다 객체면 [객체], 배열이면 배열 그대로. Windows처럼 셸이 *를 안 펼쳐도 동작하게 glob."""
-    articles = []
+def load_articles(paths: list[str]) -> tuple[list[dict], list[tuple[str, str]]]:
+    """파일마다 객체면 [객체], 배열이면 배열 그대로. Windows처럼 셸이 *를 안 펼쳐도 동작하게 glob.
+    읽을 수 없는 파일(없음, 깨진 JSON)은 실패 목록에 넣고 나머지 파일은 계속 읽음."""
+    articles, failed = [], []
     for pattern in paths:
         for p in sorted(glob.glob(pattern)) or [pattern]:
-            data = json.loads(Path(p).read_text(encoding="utf-8"))
+            try:
+                data = json.loads(Path(p).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as e:
+                failed.append((p, f"파일을 읽을 수 없음 ({type(e).__name__}: {e})"))
+                continue
             articles += data if isinstance(data, list) else [data]
-    return articles
+    return articles, failed
 
 
 def build_news(raw: dict, ai: Rewrite) -> dict:
@@ -125,9 +130,9 @@ def main():
     out_dir = HERE / "results"
     out_dir.mkdir(exist_ok=True)
 
-    failed = []
-    for i, raw in enumerate(load_articles(args.inputs)):
-        article_id = raw.get("id", f"(id 없음 #{i + 1})")
+    articles, failed = load_articles(args.inputs)
+    for i, raw in enumerate(articles):
+        article_id = raw.get("id", f"(id 없음 #{i + 1})") if isinstance(raw, dict) else f"(기사 아님 #{i + 1})"
         try:
             news = rewrite_one(raw, template, args.provider, model)
         except Exception as e:  # API 오류, 거절, 필드 누락 등: 이 기사만 실패로 두고 계속
