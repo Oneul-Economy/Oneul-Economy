@@ -11,12 +11,24 @@ python -m venv .venv
 pip install -r requirements.txt
 cp ../.env.example .env         # 쓰는 모델의 키만 채우고 LLM_PROVIDER 맞추기
 
-python rewrite.py samples/raw-article-1.json --prompt prompts/rewrite_v2.md
-python check.py results/news-1-claude-v2.json
+# 크롤러 결과(기사 배열)를 그대로 넣기
+python rewrite.py ../Backend/pipeline/output/raw-article.json
+# 기사 하나짜리 파일도 그대로 동작
+python rewrite.py samples/raw-article-1.json
+
+python check.py "results/*-v2.json"
 ```
 
+- 입력: 기사 하나(객체) 파일과 크롤러 결과(배열) 파일 모두 받음. 여러 파일·`*` 패턴도 가능
 - 모델 선택: `--provider gemini|claude|openai` (기본값은 `.env`의 `LLM_PROVIDER`), 모델 이름은 `--model`로 변경
-- 결과: `results/news-{기사}-{모델}-{프롬프트 버전}.json`
+- 프롬프트: 기본값 `prompts/rewrite_v2.md` (평가에서 v2가 우세). 다른 버전은 `--prompt prompts/rewrite_v1.md`
+- 결과: `results/{기사 id}-{모델}-{프롬프트 버전}.json`. 기사 1건 = 파일 1개 = `News` 객체 하나
+- 실패: 기사 하나가 실패해도(API 오류, 거절, 필드 누락) 나머지는 계속 처리. 마지막에 실패한 id 목록을 출력하고 **종료 코드 1**
+  ```
+  실패 1개
+  - 20261119-005930-018-0006412574: KeyError: 'content'
+  ```
+  고치는 방법: 실패한 기사만 다시 실행
 
 ## 파일
 
@@ -25,6 +37,6 @@ python check.py results/news-1-claude-v2.json
 | `guidelines.md` | 첨삭 기준 |
 | `prompts/rewrite_v*.md` | 프롬프트. `{title}`, `{content}` 자리에 원문이 들어감 |
 | `rewrite.py` | 첨삭 실행. `id`·`stock_name`·`source`는 원문에서 복사, `read_minutes`는 코드로 계산 |
-| `check.py` | 결과 자동 점검 (숫자, 용어, 권유 표현, 분량) |
+| `check.py` | 결과 자동 점검 (숫자, 용어, 권유 표현, 분량). 원문은 `samples/`와 `Backend/pipeline/output/`에서 id로 찾음 |
 | `samples/` | 입력 기사 (#6 크롤러 결과) |
 | `results/` | 결과와 평가 표 (`results/README.md`) |
