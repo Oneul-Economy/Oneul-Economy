@@ -1,0 +1,28 @@
+{
+  "holdings": [
+    {
+      "stock_name": "삼성전자",
+      "stock_code": null,
+      "quantity": 3,
+      "avg_price": 71000,
+      "market_value": 225000,
+      "currency": "KRW"
+    },
+    {
+      "stock_name": "SK하이닉스",
+      "stock_code": null,
+      "quantity": 2,
+      "avg_price": 180500,
+      "market_value": 410000,
+      "currency": "KRW"
+    },
+    {
+      "stock_name": "카카오",
+      "stock_code": null,
+      "quantity": 10,
+      "avg_price": 52300,
+      "market_value": 398000,
+      "currency": "KRW"
+    }
+  ]
+}
