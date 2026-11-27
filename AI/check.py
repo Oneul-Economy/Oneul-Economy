@@ -16,17 +16,27 @@ INVEST = r"사세요|파세요|매수하세요|매도하세요|투자의견|목�
 
 RAW_DIRS = [HERE / "samples", HERE.parent / "Backend" / "pipeline" / "output"]
 
-raws = {}
-for d in RAW_DIRS:
-    for p in d.glob("*.json"):
-        data = json.loads(p.read_text(encoding="utf-8"))
-        for r in data if isinstance(data, list) else [data]:
-            raws[r["id"]] = r
+_raws = None
+
+
+def find_raw(article_id: str) -> dict:
+    """원문을 id로 찾음. 처음 부를 때 한 번만 읽음 (import만 하는 quiz.py 등은 파일을 읽지 않게)."""
+    global _raws
+    if _raws is None:
+        _raws = {}
+        for d in RAW_DIRS:
+            for p in d.glob("*.json"):
+                data = json.loads(p.read_text(encoding="utf-8"))
+                for r in data if isinstance(data, list) else [data]:
+                    _raws[r["id"]] = r
+    if article_id not in _raws:
+        raise KeyError(f"원문을 찾을 수 없음: {article_id} (samples/, Backend/pipeline/output/)")
+    return _raws[article_id]
 
 
 def check(path: Path) -> dict:
     n = json.loads(path.read_text(encoding="utf-8"))
-    raw = raws[n["id"]]
+    raw = find_raw(n["id"])
     src = raw["title"] + raw["content"]
     text = " ".join([n["title"], n["summary"], *n["body"]])
     body = " ".join(n["body"])
