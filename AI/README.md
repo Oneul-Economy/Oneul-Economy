@@ -80,6 +80,20 @@ python quiz.py results/20261105-005930-366-0001202773-claude-v2.json --no-verify
   ```
   고치는 방법: 그 기사만 `quiz.py`로 다시 생성 → 통과하면 사용. **실패한 퀴즈는 앱(`Frontend/assets/mock/quiz.json`)·DB에 넣지 않음**
 
+## OX 퀴즈 (`ox_quiz.py`)
+
+첨삭 결과(`News`) 본문으로 기사 내용 OX 퀴즈를 2~3문제 만든다. 형식은 `docs/data-format.md`의 `4. OxQuiz` (앱 `OxQuiz` 모델과 같음).
+
+```bash
+python ox_quiz.py "results/*-v2.json" --provider claude
+```
+
+- 결과: `results/ox/{news_id}-ox-{모델}-{프롬프트 버전}.json`
+- 문제 순서는 코드가 섞음 (모델은 늘 OXO처럼 같은 순서로 냄)
+- **자동 검사**: 문제 2개 이상, O와 X가 둘 다 있음, `evidence`가 본문에 글자 그대로 있음, 문제가 평서문, 권유 표현 없음
+- **2차 검증** (기본 켜짐, `--no-verify`로 끔): 정답을 숨기고 기사만 주고 다시 풀게 함. 답이 다르거나 "기사만으로 판단할 수 없음"이면 실패
+- 실패 처리와 고치는 방법은 `quiz.py`와 같음 (그 기사는 저장 안 함, 종료 코드 1, 다시 생성)
+
 ## 파일
 
 | 파일 | 내용 |
@@ -88,6 +102,7 @@ python quiz.py results/20261105-005930-366-0001202773-claude-v2.json --no-verify
 | `prompts/rewrite_v*.md` | 프롬프트. `{title}`, `{content}` 자리에 원문이 들어감 |
 | `rewrite.py` | 첨삭 실행. `id`·`stock_name`·`source`는 원문에서 복사, `read_minutes`는 코드로 계산 |
 | `quiz.py`, `prompts/quiz_*.md` | 용어 퀴즈 생성·검사·2차 검증 |
+| `ox_quiz.py`, `prompts/ox_*.md` | OX 퀴즈 생성·검사·2차 검증 (모델 호출은 `quiz.py` 것을 씀) |
 | `check.py` | 결과 자동 점검 (숫자, 용어, 권유 표현, 분량). 원문은 `samples/`와 `Backend/pipeline/output/`에서 id로 찾음 |
 | `samples/` | 입력 기사 (#6 크롤러 결과) |
 | `results/` | 결과와 평가 표 (`results/README.md`) |

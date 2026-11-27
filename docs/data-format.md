@@ -89,3 +89,32 @@
 | `quizzes[].choices` | 문자열 배열 | 보기 4개, 서로 다름. 용어 단어는 보기에 들어가지 않음 |
 | `quizzes[].answer_index` | 숫자 | 정답 보기 위치 (0~3). 코드가 보기를 섞은 뒤 정함 |
 | `quizzes[].explanation` | 문자열 | 정답 해설, "~해요"체 |
+
+### 4. `OxQuiz` — 기사 내용 OX 퀴즈 = OX 퀴즈 화면 입력
+`News`와 별도 파일. `news_id`로 기사와 연결. AI 결과: `AI/results/ox/{news_id}-ox-{provider}-{ver}.json` (용어 퀴즈를 읽는 `load_quiz`의 `results/quiz/` 패턴과 섞이지 않게 별도 폴더). 앱 모델: `Frontend/lib/models/ox_quiz.dart`
+```json
+{
+  "news_id": "20261105-005930-366-0001202773",
+  "quizzes": [
+    {
+      "id": "20261105-005930-366-0001202773-ox1",
+      "question": "초기업노조는 2027년 임금교섭에서 동행노조와 공동교섭단을 만들겠다고 밝혔다.",
+      "answer": false,
+      "hint": "초기업노조가 어떤 교섭 방식을 택했는지 살펴보세요.",
+      "explanation": "초기업노조는 동행노조와 공동교섭단을 만들지 않겠다고 전했어요.",
+      "evidence": "초기업노조는 2027년 교섭에서 동행노조와 공동교섭단을 만들지 않겠다고 전했어요."
+    }
+  ]
+}
+```
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `news_id` | 문자열 | 퀴즈를 만든 기사의 id (`News.id`와 같음) |
+| `quizzes` | 배열 | 기사당 2~3문제. O와 X가 둘 다 있음 |
+| `quizzes[].id` | 문자열 | `{news_id}-ox{번호}` (1부터) |
+| `quizzes[].question` | 문자열 | 기사 내용에 대한 평서문 |
+| `quizzes[].answer` | 참/거짓 | `true` = O, `false` = X |
+| `quizzes[].hint` | 문자열 | 풀기 전에 보여 주는 힌트 |
+| `quizzes[].explanation` | 문자열 | 정답 해설, "~해요"체 |
+| `quizzes[].evidence` | 문자열 | 근거. `News.body`의 문장을 글자 그대로 (화면에서 따옴표로 인용) |
