@@ -126,6 +126,9 @@ def validate(quiz_set: dict, news: dict) -> list[str]:
     errors = []
     if not quiz_set["quizzes"]:
         errors.append(f"{quiz_set['news_id']}: 퀴즈가 하나도 없음")
+    quiz_words = [q["word"] for q in quiz_set["quizzes"]]
+    if dup := sorted({w for w in quiz_words if quiz_words.count(w) > 1}):
+        errors.append(f"{quiz_set['news_id']}: 같은 용어의 문제가 두 번 나옴 ({json.dumps(dup, ensure_ascii=False)})")
     for q in quiz_set["quizzes"]:
         qid, choices, ans = q["id"], q["choices"], q["answer_index"]
 
