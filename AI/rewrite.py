@@ -8,6 +8,7 @@
   python rewrite.py samples/raw-article-1.json --provider openai --model gpt-5.6-terra
   python rewrite.py samples/raw-article-1.json --prompt prompts/rewrite_v1.md
 
+결과 파일이 이미 있는 기사는 AI를 부르지 않고 건너뜀 (다시 첨삭하려면 --force).
 기사 하나가 실패해도 나머지는 계속 처리하고, 실패가 있으면 종료 코드 1.
 """
 import argparse
@@ -122,6 +123,7 @@ def main():
     ap.add_argument("--provider", choices=PROVIDERS, default=os.getenv("LLM_PROVIDER", "gemini"))
     ap.add_argument("--model", help="기본값: DEFAULT_MODELS")
     ap.add_argument("--prompt", type=Path, default=HERE / "prompts" / "rewrite_v2.md")
+    ap.add_argument("--force", action="store_true", help="결과 파일이 있어도 다시 첨삭 (프롬프트 수정 후 등)")
     args = ap.parse_args()
 
     template = args.prompt.read_text(encoding="utf-8")
@@ -131,21 +133,29 @@ def main():
     out_dir.mkdir(exist_ok=True)
 
     articles, failed = load_articles(args.inputs)
+    done = skipped = 0
     for i, raw in enumerate(articles):
         article_id = raw.get("id", f"(id 없음 #{i + 1})") if isinstance(raw, dict) else f"(기사 아님 #{i + 1})"
+        # 파일 이름은 기사 id 기준: 배열 하나에서 여러 결과가 나와도 서로 덮어쓰지 않음
+        out = out_dir / f"{article_id}-{args.provider}-{version}.json"
+        # 이미 첨삭한 기사는 AI를 부르지 않음 (비용, 그리고 다시 쓰면 내용이 바뀌어 퀴즈와 어긋남)
+        # ponytail: 언론사가 원문을 고쳐도 예전 첨삭 유지. 필요해지면 원문 해시 비교
+        if out.exists() and not args.force:
+            print(f"건너뜀 {article_id} (이미 있음)")
+            skipped += 1
+            continue
         try:
             news = rewrite_one(raw, template, args.provider, model)
         except Exception as e:  # API 오류, 거절, 필드 누락 등: 이 기사만 실패로 두고 계속
             failed.append((article_id, f"{type(e).__name__}: {e}"))
             print(f"실패 {article_id}: {failed[-1][1]}", file=sys.stderr)
             continue
-        # 파일 이름은 기사 id 기준: 배열 하나에서 여러 결과가 나와도 서로 덮어쓰지 않음
-        out = out_dir / f"{article_id}-{args.provider}-{version}.json"
         out.write_text(json.dumps(news, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"{args.provider}/{model} -> {out.name}")
+        done += 1
 
+    print(f"\n첨삭 {done}개, 건너뜀 {skipped}개, 실패 {len(failed)}개")
     if failed:
-        print(f"\n실패 {len(failed)}개", file=sys.stderr)
         for article_id, reason in failed:
             print(f"- {article_id}: {reason}", file=sys.stderr)
         sys.exit(1)
