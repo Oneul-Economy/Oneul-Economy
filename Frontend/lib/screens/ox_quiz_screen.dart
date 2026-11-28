@@ -6,14 +6,11 @@ import '../models/news.dart';
 import '../models/ox_quiz.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import '../widgets/quiz_timer.dart';
 import 'quiz_result_screen.dart';
 
 class OxQuizScreen extends StatefulWidget {
-  const OxQuizScreen({
-    super.key,
-    required this.quiz,
-    required this.news,
-  });
+  const OxQuizScreen({super.key, required this.quiz, required this.news});
 
   final OxQuiz quiz;
   final News news;
@@ -31,10 +28,13 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
   final Set<String> _savedQuizIds = {};
 
   Timer? _timer;
-  int _elapsedSeconds = 0;
+  int _remaining = quizTimeLimit;
+
+  /// 답을 고르기 전에 시간이 다 됐는지 (오답 처리)
+  bool _timedOut = false;
 
   OxQuizItem get _currentItem => widget.quiz.quizzes[_currentIndex];
-  bool get _hasAnswered => _selectedAnswer != null;
+  bool get _hasAnswered => _selectedAnswer != null || _timedOut;
   bool get _isLastQuestion => _currentIndex == widget.quiz.quizzes.length - 1;
   bool get _isCurrentSaved => _savedQuizIds.contains(_currentItem.id);
 
@@ -43,7 +43,10 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _hasAnswered) return;
-      setState(() => _elapsedSeconds++);
+      setState(() {
+        _remaining--;
+        if (_remaining <= 0) _timedOut = true;
+      });
     });
   }
 
@@ -51,12 +54,6 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
-  }
-
-  String get _formattedTime {
-    final minutes = _elapsedSeconds ~/ 60;
-    final seconds = (_elapsedSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 
   void _selectAnswer(bool value) {
@@ -86,6 +83,8 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
       setState(() {
         _currentIndex++;
         _selectedAnswer = null;
+        _timedOut = false;
+        _remaining = quizTimeLimit;
       });
       return;
     }
@@ -121,9 +120,16 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: AppColors.ink, size: 22),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.ink,
+                      size: 22,
+                    ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -133,7 +139,9 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
                         return Expanded(
                           child: Container(
                             height: 3,
-                            margin: EdgeInsets.only(right: i == total - 1 ? 0 : 6),
+                            margin: EdgeInsets.only(
+                              right: i == total - 1 ? 0 : 6,
+                            ),
                             decoration: BoxDecoration(
                               color: isActive
                                   ? AppColors.ink
@@ -146,17 +154,7 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.access_time, size: 15, color: AppColors.muted),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formattedTime,
-                    style: TextStyle(
-                      fontFamily: AppFonts.sans,
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  QuizTimerLabel(remaining: _remaining),
                 ],
               ),
             ),
@@ -190,7 +188,9 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _isCurrentSaved ? AppColors.ink : Colors.white,
+                              color: _isCurrentSaved
+                                  ? AppColors.ink
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: _isCurrentSaved
@@ -368,7 +368,9 @@ class _OxQuizScreenState extends State<OxQuizScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          isCorrectSelected ? '정답이에요!' : '아쉬워요',
+                          isCorrectSelected
+                              ? '정답이에요!'
+                              : (_timedOut ? '시간이 다 됐어요' : '아쉬워요'),
                           style: TextStyle(
                             fontFamily: AppFonts.sans,
                             color: AppColors.ink,

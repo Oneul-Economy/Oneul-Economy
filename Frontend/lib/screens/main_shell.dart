@@ -14,12 +14,42 @@ import 'portfolio_screens.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
+  static const home = 0, articles = 1, portfolio = 2, journal = 3, my = 4;
+
+  /// 지금 고른 탭. 위에 덮인 화면(퀴즈 결과 등)에서도 바꿀 수 있게 전역으로 둔다.
+  static final tab = ValueNotifier<int>(home);
+
+  /// 다른 화면에서 탭을 바꿀 때 (예: 홈의 '내 투자' → 포트폴리오 탭).
+  static void selectTab(BuildContext context, int index) => tab.value = index;
+
+  /// 위에 열린 화면을 모두 닫고 홈 탭으로. ('홈으로' 버튼)
+  static void goHome(BuildContext context) {
+    Navigator.popUntil(context, (r) => r.isFirst);
+    tab.value = home;
+  }
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _index = 0;
+  int get _index => MainShell.tab.value;
+
+  void _select(int i) => MainShell.tab.value = i;
+
+  void _onTabChanged() => setState(() {});
+
+  @override
+  void initState() {
+    super.initState();
+    MainShell.tab.addListener(_onTabChanged);
+  }
+
+  @override
+  void dispose() {
+    MainShell.tab.removeListener(_onTabChanged);
+    super.dispose();
+  }
 
   static const _tabs = [
     (icon: Icons.home_outlined, selectedIcon: Icons.home_rounded, label: '홈'),
@@ -33,11 +63,7 @@ class _MainShellState extends State<MainShell> {
       selectedIcon: Icons.pie_chart_rounded,
       label: '포트폴리오',
     ),
-    (
-      icon: Icons.edit_outlined,
-      selectedIcon: Icons.edit_rounded,
-      label: '일지',
-    ),
+    (icon: Icons.edit_outlined, selectedIcon: Icons.edit_rounded, label: '일지'),
     (
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
@@ -57,10 +83,7 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _screens),
-      bottomNavigationBar: _BottomBar(
-        index: _index,
-        onTap: (i) => setState(() => _index = i),
-      ),
+      bottomNavigationBar: _BottomBar(index: _index, onTap: _select),
     );
   }
 }

@@ -6,54 +6,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oneul_economy/models/news.dart';
 import 'package:oneul_economy/models/quiz.dart';
 import 'package:oneul_economy/screens/home_screen.dart';
+import 'package:oneul_economy/screens/ox_quiz_screen.dart';
 import 'package:oneul_economy/screens/quiz_result_screen.dart';
 import 'package:oneul_economy/screens/quiz_screen.dart';
 import 'package:oneul_economy/theme/app_colors.dart';
 
 News _sampleNews({String id = '20261105-005930-002'}) => News(
-      id: id,
-      stockName: '삼성전자',
-      title: '테스트 기사 제목',
-      summary: '테스트 기사 요약입니다.',
-      readMinutes: 2,
-      body: const ['본문 첫 번째 문단입니다.'],
-      terms: const [Term(word: 'HBM', meaning: '고대역폭 메모리')],
-      source: NewsSource(
-        press: '테스트경제',
-        url: 'https://example.com',
-        publishedAt: DateTime(2026, 11, 5),
-      ),
-    );
+  id: id,
+  stockName: '삼성전자',
+  title: '테스트 기사 제목',
+  summary: '테스트 기사 요약입니다.',
+  readMinutes: 2,
+  body: const ['본문 첫 번째 문단입니다.'],
+  terms: const [Term(word: 'HBM', meaning: '고대역폭 메모리')],
+  source: NewsSource(
+    press: '테스트경제',
+    url: 'https://example.com',
+    publishedAt: DateTime(2026, 11, 5),
+  ),
+);
 
 Quiz _sampleQuiz({String newsId = '20261105-005930-002'}) => Quiz(
-      newsId: newsId,
-      quizzes: const [
-        QuizItem(
-          id: '20261105-005930-002-q1',
-          word: 'HBM',
-          question: '문제 1 질문',
-          choices: ['정답1', '오답1-1', '오답1-2', '오답1-3'],
-          answerIndex: 0,
-          explanation: '문제 1 해설입니다.',
-        ),
-        QuizItem(
-          id: '20261105-005930-002-q2',
-          word: '영업이익',
-          question: '문제 2 질문',
-          choices: ['오답2-1', '정답2', '오답2-2', '오답2-3'],
-          answerIndex: 1,
-          explanation: '문제 2 해설입니다.',
-        ),
-        QuizItem(
-          id: '20261105-005930-002-q3',
-          word: '파운드리',
-          question: '문제 3 질문',
-          choices: ['오답3-1', '오답3-2', '정답3', '오답3-3'],
-          answerIndex: 2,
-          explanation: '문제 3 해설입니다.',
-        ),
-      ],
-    );
+  newsId: newsId,
+  quizzes: const [
+    QuizItem(
+      id: '20261105-005930-002-q1',
+      word: 'HBM',
+      question: '문제 1 질문',
+      choices: ['정답1', '오답1-1', '오답1-2', '오답1-3'],
+      answerIndex: 0,
+      explanation: '문제 1 해설입니다.',
+    ),
+    QuizItem(
+      id: '20261105-005930-002-q2',
+      word: '영업이익',
+      question: '문제 2 질문',
+      choices: ['오답2-1', '정답2', '오답2-2', '오답2-3'],
+      answerIndex: 1,
+      explanation: '문제 2 해설입니다.',
+    ),
+    QuizItem(
+      id: '20261105-005930-002-q3',
+      word: '파운드리',
+      question: '문제 3 질문',
+      choices: ['오답3-1', '오답3-2', '정답3', '오답3-3'],
+      answerIndex: 2,
+      explanation: '문제 3 해설입니다.',
+    ),
+  ],
+);
 
 void main() {
   test('1. Quiz.fromJson이 #30 형식을 정상적으로 읽는다', () {
@@ -81,7 +82,15 @@ void main() {
     expect(quiz.quizzes.first.choices.length, 4);
   });
 
-  testWidgets('2. 용어 행을 누르면 퀴즈 화면으로 이동하고, 생각 퀴즈 행은 이동하지 않는다', (tester) async {
+  /// 홈 카드의 화살표(본문 읽기) → 본문의 '퀴즈 풀러 가기' → 퀴즈 고르기 시트
+  Future<void> openQuizPicker(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('본문 읽기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('퀴즈 풀러 가기'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('2. 퀴즈 고르기에서 용어 퀴즈는 열리고, 생각 퀴즈는 열리지 않는다', (tester) async {
     final news = _sampleNews();
     final quiz = _sampleQuiz();
 
@@ -91,16 +100,55 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openQuizPicker(tester);
 
-    // 생각 퀴즈 행 클릭 → 이동하지 않음
+    // 생각 퀴즈 → 이동하지 않음
     await tester.tap(find.text('생각 퀴즈 · 1분'));
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(find.byType(QuizScreen), findsNothing);
+    await tester.pump(const Duration(seconds: 3)); // 안내 문구가 사라질 때까지
 
-    // 용어 행 클릭 → 퀴즈 화면으로 이동
+    // 용어 퀴즈 → 퀴즈 화면으로 이동
     await tester.tap(find.text('용어 퀴즈 · 30초'));
     await tester.pumpAndSettle();
     expect(find.byType(QuizScreen), findsOneWidget);
+  });
+
+  testWidgets('2-1. 퀴즈 고르기에서 OX 퀴즈도 열린다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeScreen(
+          initialNewsList: [_sampleNews()],
+          initialQuiz: _sampleQuiz(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await openQuizPicker(tester);
+
+    await tester.tap(find.text('OX 퀴즈 · 30초'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OxQuizScreen), findsOneWidget);
+  });
+
+  testWidgets('2-2. 30초가 지나면 시간 초과로 해설이 보이고, 10초 이하에서 타이머가 빨갛다', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QuizScreen(quiz: _sampleQuiz(), news: _sampleNews()),
+      ),
+    );
+    expect(find.text('0:30'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 20));
+    expect(find.text('0:10'), findsOneWidget);
+    final timerText = tester.widget<Text>(find.text('0:10'));
+    expect(timerText.style?.color, const Color(0xFFD93025));
+
+    await tester.pump(const Duration(seconds: 10));
+    expect(find.text('시간이 다 됐어요'), findsOneWidget);
+    expect(find.text('문제 1 해설입니다.'), findsOneWidget);
   });
 
   testWidgets('3. 오답을 고르면 정답 보기가 강조되고 해설이 보인다', (tester) async {
@@ -178,10 +226,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await openQuizPicker(tester);
 
     await tester.tap(find.text('용어 퀴즈 · 30초'));
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(find.byType(QuizScreen), findsNothing);
+    expect(find.text('이 기사의 용어 퀴즈는 준비 중이에요'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3)); // 안내 문구가 사라질 때까지
   });
 
   test('6. (목업 일치) assets/mock/quiz.json의 news_id가 news.json의 id와 같다', () {

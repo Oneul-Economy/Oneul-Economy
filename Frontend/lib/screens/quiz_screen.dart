@@ -6,14 +6,11 @@ import '../models/news.dart';
 import '../models/quiz.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import '../widgets/quiz_timer.dart';
 import 'quiz_result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({
-    super.key,
-    required this.quiz,
-    required this.news,
-  });
+  const QuizScreen({super.key, required this.quiz, required this.news});
 
   final Quiz quiz;
   final News news;
@@ -34,10 +31,13 @@ class _QuizScreenState extends State<QuizScreen> {
   final Set<String> _savedWords = {};
 
   Timer? _timer;
-  int _elapsedSeconds = 0;
+  int _remaining = quizTimeLimit;
+
+  /// 답을 고르기 전에 시간이 다 됐는지
+  bool _timedOut = false;
 
   QuizItem get _currentItem => widget.quiz.quizzes[_currentIndex];
-  bool get _hasAnswered => _selectedIndex != null;
+  bool get _hasAnswered => _selectedIndex != null || _timedOut;
   bool get _isLastQuestion => _currentIndex == widget.quiz.quizzes.length - 1;
   bool get _isCurrentSaved => _savedQuizIds.contains(_currentItem.id);
   bool get _isWordSaved => _savedWords.contains(_currentItem.word);
@@ -47,7 +47,14 @@ class _QuizScreenState extends State<QuizScreen> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _hasAnswered) return;
-      setState(() => _elapsedSeconds++);
+      setState(() {
+        _remaining--;
+        if (_remaining <= 0) {
+          // 시간 초과는 오답으로
+          _timedOut = true;
+          _wrongItems.add(_currentItem);
+        }
+      });
     });
   }
 
@@ -55,12 +62,6 @@ class _QuizScreenState extends State<QuizScreen> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
-  }
-
-  String get _formattedTime {
-    final minutes = _elapsedSeconds ~/ 60;
-    final seconds = (_elapsedSeconds % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 
   void _selectChoice(int index) {
@@ -102,6 +103,8 @@ class _QuizScreenState extends State<QuizScreen> {
       setState(() {
         _currentIndex++;
         _selectedIndex = null;
+        _timedOut = false;
+        _remaining = quizTimeLimit;
       });
       return;
     }
@@ -140,9 +143,16 @@ class _QuizScreenState extends State<QuizScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: AppColors.ink, size: 22),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.ink,
+                      size: 22,
+                    ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -152,7 +162,9 @@ class _QuizScreenState extends State<QuizScreen> {
                         return Expanded(
                           child: Container(
                             height: 3,
-                            margin: EdgeInsets.only(right: i == total - 1 ? 0 : 6),
+                            margin: EdgeInsets.only(
+                              right: i == total - 1 ? 0 : 6,
+                            ),
                             decoration: BoxDecoration(
                               color: isActive
                                   ? AppColors.ink
@@ -165,17 +177,7 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.access_time, size: 15, color: AppColors.muted),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formattedTime,
-                    style: TextStyle(
-                      fontFamily: AppFonts.sans,
-                      color: AppColors.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  QuizTimerLabel(remaining: _remaining),
                 ],
               ),
             ),
@@ -209,7 +211,9 @@ class _QuizScreenState extends State<QuizScreen> {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: _isCurrentSaved ? AppColors.ink : Colors.white,
+                              color: _isCurrentSaved
+                                  ? AppColors.ink
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: _isCurrentSaved
@@ -348,7 +352,9 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          isCorrectSelected ? '정답이에요!' : '아쉬워요',
+                          isCorrectSelected
+                              ? '정답이에요!'
+                              : (_timedOut ? '시간이 다 됐어요' : '아쉬워요'),
                           style: TextStyle(
                             fontFamily: AppFonts.sans,
                             color: AppColors.ink,
@@ -488,8 +494,9 @@ class _ChoiceCard extends StatelessWidget {
       onPressed: isAnswered ? null : onTap,
       style: OutlinedButton.styleFrom(
         backgroundColor: Colors.white,
-        disabledBackgroundColor:
-            isFaded ? Colors.white.withValues(alpha: 0.6) : Colors.white,
+        disabledBackgroundColor: isFaded
+            ? Colors.white.withValues(alpha: 0.6)
+            : Colors.white,
         side: BorderSide(color: borderColor, width: borderWidth),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -522,8 +529,9 @@ class _ChoiceCard extends StatelessWidget {
                 fontFamily: AppFonts.sans,
                 color: textColor,
                 fontSize: 14,
-                fontWeight:
-                    isCorrectShown || isWrongSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isCorrectShown || isWrongSelected
+                    ? FontWeight.w600
+                    : FontWeight.w500,
               ),
             ),
           ),

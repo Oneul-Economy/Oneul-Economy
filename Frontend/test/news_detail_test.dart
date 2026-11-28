@@ -40,7 +40,7 @@ void main() {
     ));
 
     // ③ "본문 읽기" 누르고 화면 전환 기다리기
-    await tester.tap(find.text('본문 읽기'));
+    await tester.tap(find.byTooltip('본문 읽기'));
     await tester.pumpAndSettle();
 
     // ④ 확인
@@ -64,7 +64,7 @@ void main() {
     await tester.pump();
     expect(opened, isFalse);
 
-    await tester.tap(find.text('본문 읽기'));
+    await tester.tap(find.byTooltip('본문 읽기'));
     expect(opened, isTrue);
   });
 }

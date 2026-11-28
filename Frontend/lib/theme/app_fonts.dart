@@ -11,4 +11,9 @@ class AppFonts {
 
   /// 제목·번호 (Bold 700)
   static const serif = 'NotoSerifKR';
+
+  /// 일지의 날짜 도장·노트 글씨처럼 타자기 느낌이 필요한 곳.
+  /// 폰트 파일을 넣지 않고 기기의 고정폭 폰트를 쓴다. 한글은 [monoFallback]으로.
+  static const mono = 'monospace';
+  static const monoFallback = ['Courier New', 'Courier', sans];
 }
