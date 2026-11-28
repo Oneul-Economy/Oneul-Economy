@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from api.auth import router as auth_router
-from api.schemas import NewsOut, to_out
+from api.portfolio import router as portfolio_router
 from api.schemas import NewsOut, to_out
 from db.database import SessionLocal
 from db.models import News
@@ -13,10 +13,11 @@ app = FastAPI(title="오늘의 경제 API")
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["Authorization"],
 )
 app.include_router(auth_router)
+app.include_router(portfolio_router)
 
 def get_db():
     with SessionLocal() as session:
