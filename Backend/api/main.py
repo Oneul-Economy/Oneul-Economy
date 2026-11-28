@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware # 다른 출처의 요청을 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from api.auth import router as auth_router
+from api.schemas import NewsOut, to_out
 from api.schemas import NewsOut, to_out
 from db.database import SessionLocal
 from db.models import News
@@ -12,8 +14,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_methods=["GET"],
+    allow_headers=["Authorization"],
 )
-
+app.include_router(auth_router)
 
 def get_db():
     with SessionLocal() as session:

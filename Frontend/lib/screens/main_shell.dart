@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../widgets/empty_message.dart';
+import 'article_tab_screen.dart';
 import 'home_screen.dart';
-import 'my_screen.dart';
+import 'journal_screens.dart';
+import 'my_profile_screens.dart';
+import 'portfolio_screens.dart';
 
-/// 하단 메뉴바(홈 / 기사 / 포트폴리오 / MY)가 있는 앱의 뼈대.
+/// 하단 메뉴바(홈 / 기사 / 포트폴리오 / 일지 / MY)가 있는 앱의 뼈대.
 ///
 /// 탭을 바꿔도 각 화면 상태(스크롤 위치 등)가 남도록 IndexedStack을 쓴다.
 /// 본문·기사집 같은 하위 화면은 Navigator.push로 이 위에 덮어서 연다.
@@ -32,6 +34,11 @@ class _MainShellState extends State<MainShell> {
       label: '포트폴리오',
     ),
     (
+      icon: Icons.edit_outlined,
+      selectedIcon: Icons.edit_rounded,
+      label: '일지',
+    ),
+    (
       icon: Icons.person_outline_rounded,
       selectedIcon: Icons.person_rounded,
       label: 'MY',
@@ -40,9 +47,10 @@ class _MainShellState extends State<MainShell> {
 
   static const _screens = [
     HomeScreen(),
-    _ComingSoonScreen(icon: Icons.article_outlined, title: '기사'),
-    _ComingSoonScreen(icon: Icons.pie_chart_outline_rounded, title: '포트폴리오'),
-    MyScreen(),
+    ArticleTabScreen(),
+    PortfolioTabScreen(),
+    JournalTabScreen(),
+    MyTabScreen(),
   ];
 
   @override
@@ -57,7 +65,7 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-/// Figma 교육형 홈 하단 탭(node 15-224) 모양: 흰 배경, 위 구분선,
+/// Figma 교육형 홈 하단 탭 모양: 흰 배경, 위 구분선,
 /// 선택된 탭만 진한 글자색 + 굵게, 나머지는 muted.
 class _BottomBar extends StatelessWidget {
   const _BottomBar({required this.index, required this.onTap});
@@ -129,21 +137,6 @@ class _BottomBarItem extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// 아직 내용이 없는 탭에 띄우는 "준비 중" 화면.
-class _ComingSoonScreen extends StatelessWidget {
-  const _ComingSoonScreen({required this.icon, required this.title});
-
-  final IconData icon;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: EmptyMessage(icon: icon, message: '$title 화면은 준비 중이에요.'),
     );
   }
 }
