@@ -335,15 +335,13 @@ class MyGuestScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  if (onLoginDemo != null) {
-                    onLoginDemo!();
-                    return;
-                  }
-                  Navigator.push(
+                onPressed: () async {
+                  // 로그인 화면에서 입력이 맞으면 true가 돌아옴 (Firebase 연결 전이라 실제 확인은 아직 없음)
+                  final loggedIn = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(builder: (_) => const EmailLoginScreen()),
                   );
+                  if (loggedIn == true) onLoginDemo?.call();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.ink,
