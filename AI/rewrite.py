@@ -1,14 +1,20 @@
-"""RawArticle JSON -> News JSON (이슈 #3 형식).
+"""RawArticle JSON -> News JSON (docs/data-format.md 형식).
+
+입력 파일은 기사 하나(객체)든 크롤러 결과(배열)든 모두 받음. 결과는 기사 1건 = 파일 1개.
 
 사용:
-  python rewrite.py samples/raw-article-1.json                    # .env의 LLM_PROVIDER (기본 gemini)
-  python rewrite.py samples/raw-article-1.json --provider claude
+  python rewrite.py ../Backend/pipeline/output/raw-article.json   # 크롤러 결과 그대로
+  python rewrite.py samples/*.json --provider claude
   python rewrite.py samples/raw-article-1.json --provider openai --model gpt-5.6-terra
-  python rewrite.py samples/raw-article-1.json --prompt prompts/rewrite_v2.md
+  python rewrite.py samples/raw-article-1.json --prompt prompts/rewrite_v1.md
+
+기사 하나가 실패해도 나머지는 계속 처리하고, 실패가 있으면 종료 코드 1.
 """
 import argparse
+import glob
 import json
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -76,6 +82,21 @@ def call_openai(prompt: str, model: str) -> Rewrite:
 PROVIDERS = {"gemini": call_gemini, "claude": call_claude, "openai": call_openai}
 
 
+def load_articles(paths: list[str]) -> tuple[list[dict], list[tuple[str, str]]]:
+    """파일마다 객체면 [객체], 배열이면 배열 그대로. Windows처럼 셸이 *를 안 펼쳐도 동작하게 glob.
+    읽을 수 없는 파일(없음, 깨진 JSON)은 실패 목록에 넣고 나머지 파일은 계속 읽음."""
+    articles, failed = [], []
+    for pattern in paths:
+        for p in sorted(glob.glob(pattern)) or [pattern]:
+            try:
+                data = json.loads(Path(p).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as e:
+                failed.append((p, f"파일을 읽을 수 없음 ({type(e).__name__}: {e})"))
+                continue
+            articles += data if isinstance(data, list) else [data]
+    return articles, failed
+
+
 def build_news(raw: dict, ai: Rewrite) -> dict:
     return {
         "id": raw["id"],
@@ -89,29 +110,45 @@ def build_news(raw: dict, ai: Rewrite) -> dict:
     }
 
 
+def rewrite_one(raw: dict, template: str, provider: str, model: str) -> dict:
+    # .format() 대신 replace: 프롬프트 안의 JSON 예시 중괄호와 충돌하지 않게
+    prompt = template.replace("{title}", raw["title"]).replace("{content}", raw["content"])
+    return build_news(raw, PROVIDERS[provider](prompt, model))
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("input", type=Path, help="RawArticle JSON 파일")
+    ap.add_argument("inputs", nargs="+", help="RawArticle JSON 파일 (객체 또는 배열)")
     ap.add_argument("--provider", choices=PROVIDERS, default=os.getenv("LLM_PROVIDER", "gemini"))
     ap.add_argument("--model", help="기본값: DEFAULT_MODELS")
-    ap.add_argument("--prompt", type=Path, default=HERE / "prompts" / "rewrite_v1.md")
+    ap.add_argument("--prompt", type=Path, default=HERE / "prompts" / "rewrite_v2.md")
     args = ap.parse_args()
 
-    raw = json.loads(args.input.read_text(encoding="utf-8"))
-    # .format() 대신 replace: 프롬프트 안의 JSON 예시 중괄호와 충돌하지 않게
-    prompt = (args.prompt.read_text(encoding="utf-8")
-              .replace("{title}", raw["title"])
-              .replace("{content}", raw["content"]))
-
+    template = args.prompt.read_text(encoding="utf-8")
     model = args.model or DEFAULT_MODELS[args.provider]
-    news = build_news(raw, PROVIDERS[args.provider](prompt, model))
-
-    # samples/raw-article-1.json + rewrite_v1.md -> results/news-1-claude-v1.json (모델·프롬프트끼리 비교하기 쉽게)
     version = args.prompt.stem.removeprefix("rewrite_")
-    out = HERE / "results" / f"{args.input.stem.replace('raw-article', 'news')}-{args.provider}-{version}.json"
-    out.parent.mkdir(exist_ok=True)
-    out.write_text(json.dumps(news, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"{args.provider}/{model} -> {out}")
+    out_dir = HERE / "results"
+    out_dir.mkdir(exist_ok=True)
+
+    articles, failed = load_articles(args.inputs)
+    for i, raw in enumerate(articles):
+        article_id = raw.get("id", f"(id 없음 #{i + 1})") if isinstance(raw, dict) else f"(기사 아님 #{i + 1})"
+        try:
+            news = rewrite_one(raw, template, args.provider, model)
+        except Exception as e:  # API 오류, 거절, 필드 누락 등: 이 기사만 실패로 두고 계속
+            failed.append((article_id, f"{type(e).__name__}: {e}"))
+            print(f"실패 {article_id}: {failed[-1][1]}", file=sys.stderr)
+            continue
+        # 파일 이름은 기사 id 기준: 배열 하나에서 여러 결과가 나와도 서로 덮어쓰지 않음
+        out = out_dir / f"{article_id}-{args.provider}-{version}.json"
+        out.write_text(json.dumps(news, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"{args.provider}/{model} -> {out.name}")
+
+    if failed:
+        print(f"\n실패 {len(failed)}개", file=sys.stderr)
+        for article_id, reason in failed:
+            print(f"- {article_id}: {reason}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
