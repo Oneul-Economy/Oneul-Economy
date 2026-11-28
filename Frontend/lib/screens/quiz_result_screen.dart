@@ -4,6 +4,7 @@ import '../models/news.dart';
 import '../models/quiz.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import 'main_shell.dart';
 import 'news_detail_screen.dart';
 
 class QuizResultScreen extends StatelessWidget {
@@ -137,7 +138,8 @@ class QuizResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                // 본문에서 퀴즈를 열었어도 본문이 아니라 홈 탭으로
+                onPressed: () => MainShell.goHome(context),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.ink,
                   side: const BorderSide(color: AppColors.ink),
