@@ -180,6 +180,7 @@ def main():
     ap.add_argument("--prompt", type=Path, default=HERE / "prompts" / "quiz_v1.md")
     ap.add_argument("--verify-prompt", type=Path, default=HERE / "prompts" / "quiz_verify_v1.md")
     ap.add_argument("--no-verify", action="store_true", help="2차 검증 끄기 (호출 수 절반)")
+    ap.add_argument("--force", action="store_true", help="결과 파일이 있어도 다시 만들기")
     args = ap.parse_args()
 
     template = args.prompt.read_text(encoding="utf-8")
@@ -190,10 +191,20 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     failed = []
+    done = skipped = bad = 0
     # Windows처럼 셸이 *를 안 펼쳐도 동작하게 glob
     for path in [Path(p) for arg in args.inputs for p in sorted(glob.glob(arg)) or [arg]]:
         try:
             news = json.loads(path.read_text(encoding="utf-8"))
+            out = out_dir / f"{news['id']}-quiz-{args.provider}-{version}.json"
+            # 이미 있고 지금 기사로 검사해도 통과하면 AI를 부르지 않음.
+            # 기사를 --force로 다시 첨삭해 용어가 바뀌었으면 예전 퀴즈가 검사에 걸려 다시 만듦
+            if out.exists() and not args.force:
+                if not validate(json.loads(out.read_text(encoding="utf-8")), news):
+                    print(f"건너뜀 {news['id']} (이미 있음)")
+                    skipped += 1
+                    continue
+                print(f"다시 만듦 {news['id']} (기사가 바뀌어 예전 퀴즈가 안 맞음)")
             terms = news["terms"][:MAX_QUIZZES]
             prompt = fill(
                 template,
@@ -209,14 +220,15 @@ def main():
             errors = [f"{path.name}: {type(e).__name__}: {e}"]
         if errors:  # 실패한 기사는 저장하지 않음
             failed += errors
+            bad += 1
             print(f"실패 {path.name}", file=sys.stderr)
             continue
-        out = out_dir / f"{news['id']}-quiz-{args.provider}-{version}.json"
         out.write_text(json.dumps(quiz_set, ensure_ascii=False, indent=2), encoding="utf-8")
         print(f"{args.provider}/{model} -> quiz/{out.name} (정답 위치 {[q['answer_index'] for q in quiz_set['quizzes']]})")
+        done += 1
 
+    print(f"\n퀴즈 {done}개, 건너뜀 {skipped}개, 실패 {bad}개")
     if failed:
-        print(f"\n퀴즈 실패 {len(failed)}개", file=sys.stderr)
         print("\n".join(f"- {e}" for e in failed), file=sys.stderr)
         sys.exit(1)
 
