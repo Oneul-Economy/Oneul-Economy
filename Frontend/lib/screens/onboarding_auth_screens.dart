@@ -166,11 +166,14 @@ class OnboardingStartScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
+                onPressed: () async {
+                  final loggedIn = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(builder: (_) => const EmailLoginScreen()),
                   );
+                  if (loggedIn == true && context.mounted) {
+                    Navigator.popUntil(context, (r) => r.isFirst);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.ink,
@@ -296,6 +299,7 @@ class _HintLine extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 6),
       child: Row(
+        mainAxisSize: MainAxisSize.min, // 규칙 두 개가 한 줄에 나란히 오도록
         children: [
           Icon(
             ok == false ? Icons.error_outline : Icons.check,
@@ -379,7 +383,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     setState(() => _submitted = true);
     if (_emailError != null || _passwordError != null) return;
     // TODO(#46): Firebase Auth 이메일 로그인 연결. 실패하면 오류 문구를 비밀번호 칸 아래에 표시
-    Navigator.popUntil(context, (r) => r.isFirst);
+    Navigator.pop(context, true); // 부른 화면이 로그인 상태로 바꿈
   }
 
   @override
