@@ -61,3 +61,12 @@ def test_scan_ai_failure_502(monkeypatch):
         raise RuntimeError("network")
     monkeypatch.setattr(portfolio, "run_scan", fake)
     assert post().status_code == 502
+
+
+def test_run_scan_uses_claude_even_if_llm_provider_is_gemini(monkeypatch):
+    """AI/.env의 LLM_PROVIDER=gemini(첨삭용)를 따라가면 서버에 없는 라이브러리를 불러 502가 난다."""
+    got = {}
+    monkeypatch.setenv("LLM_PROVIDER", "gemini")
+    monkeypatch.setattr(portfolio.portfolio_scan, "scan", lambda image, media_type, provider: got.setdefault("p", provider))
+    portfolio.run_scan(PNG, "image/png")
+    assert got["p"] == "claude"

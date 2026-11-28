@@ -6,7 +6,6 @@
 - 캡처 원본은 저장하지 않음: 업로드를 메모리에서 바로 scan()에 넘기고 버린다 (디스크·DB·로그 X)
 - 오류 메시지에 수량·금액 같은 값은 넣지 않음
 """
-import os
 import sys
 from pathlib import Path
 
@@ -25,8 +24,9 @@ MAX_BYTES = 10 * 1024 * 1024  # 10MB
 
 def run_scan(image: bytes, media_type: str) -> dict:
     """AI 호출. 테스트에서는 이 함수를 가짜로 바꿔 끼운다"""
-    provider = os.getenv("LLM_PROVIDER", "claude")
-    return portfolio_scan.scan(image, media_type, provider=provider)
+    # LLM_PROVIDER는 첨삭용 설정(AI/.env, 기본 gemini)이라 따르지 않는다.
+    # 서버 requirements.txt에는 anthropic만 있어서 다른 provider는 ImportError → 502
+    return portfolio_scan.scan(image, media_type, provider="claude")
 
 
 @router.post("/portfolio/scan")
