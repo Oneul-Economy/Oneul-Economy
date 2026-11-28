@@ -3,23 +3,45 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../api/news_api.dart';
 import '../models/news.dart';
-import '../models/ox_quiz.dart';
 import '../models/quiz.dart';
+import '../stores/portfolio_store.dart';
+import '../stores/saved_store.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import '../utils/number_format.dart';
 import '../widgets/news_card.dart';
+import '../widgets/toast.dart';
+import 'journal_screens.dart';
+import 'main_shell.dart';
 import 'news_detail_screen.dart';
-import 'ox_quiz_screen.dart';
-import 'quiz_screen.dart';
 
-/// 앱에 넣어 둔 샘플 JSON 기사들. (서버 연결 전 임시)
-/// 기사가 늘어나면 여기에 파일을 추가하면 카드 상단 `< 1 / N >`으로 넘길 수 있다.
+/// 서버에 연결하지 못할 때 쓰는 샘플 JSON 기사들.
 const _mockNewsFiles = ['assets/mock/news.json'];
 const _mockQuizFile = 'assets/mock/quiz.json';
 
-/// 샘플 JSON에서 오늘의 기사 목록을 읽는다.
-Future<List<News>> loadNewsList() async {
+/// 기사 목록과, 그게 서버에서 왔는지(false면 샘플 JSON).
+typedef NewsLoadResult = ({List<News> news, bool fromServer});
+
+/// 오늘의 기사 목록. 서버(`GET /news`)에서 받고,
+/// 서버가 꺼져 있거나 기사가 하나도 없으면 샘플 JSON으로 대신한다.
+Future<NewsLoadResult> loadNewsListWithSource() async {
+  try {
+    final list = await fetchNewsList();
+    if (list.isNotEmpty) return (news: list, fromServer: true);
+    debugPrint('[News] 서버에 기사가 없어 샘플 기사를 씀');
+  } catch (e) {
+    debugPrint('[News] 서버 대신 샘플 기사를 씀: $e');
+  }
+  return (news: await loadMockNewsList(), fromServer: false);
+}
+
+Future<List<News>> loadNewsList() async =>
+    (await loadNewsListWithSource()).news;
+
+/// 샘플 JSON에서 기사 목록을 읽는다.
+Future<List<News>> loadMockNewsList() async {
   return Future.wait(
     _mockNewsFiles.map((path) async {
       final text = await rootBundle.loadString(path);
@@ -47,12 +69,10 @@ bool canOpenQuiz(News news, Quiz? quiz) {
   return true;
 }
 
+/// 홈 (Figma 홈, node 129-58):
+/// 헤더 → 내 투자 → 오늘의 브리핑 카드 → 오늘의 용어 → 오늘의 일지.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    this.initialNewsList,
-    this.initialQuiz,
-  });
+  const HomeScreen({super.key, this.initialNewsList, this.initialQuiz});
 
   /// 위젯 테스트에서 rootBundle 대신 데이터를 직접 주입할 때 사용.
   final List<News>? initialNewsList;
@@ -93,79 +113,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openDetail(News news) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => NewsDetailScreen(news: news)),
-    );
-  }
-
-  OxQuiz _buildSampleOxQuiz(News news) {
-    return OxQuiz(
-      newsId: news.id,
-      quizzes: const [
-        OxQuizItem(
-          id: 'ox-1',
-          question: '기사 내용에 따르면, 새로운 노동조합 설립은 기존 임금교섭 구도에 영향을 줄 수 있다.',
-          answer: true,
-          hint: '복수노조 체제에서의 교섭 창구 단일화를 떠올려 보세요.',
-          explanation: '새 노조가 설립되면 대표 교섭 노조 선정과 임금교섭 구도에 변화가 생길 수 있습니다.',
-          evidence: '기사 요약: 임금교섭 구도가 바뀔 수 있어요.',
-        ),
-        OxQuizItem(
-          id: 'ox-2',
-          question: '환율이 상승하면 수출 비중이 높은 기업의 원화 환산 매출은 항상 감소한다.',
-          answer: false,
-          hint: '달러로 번 돈을 원화로 바꿀 때를 생각해 보세요.',
-          explanation: '원·달러 환율이 오르면 같은 달러 매출이라도 원화로 환산했을 때 금액이 커져 수출 기업에 유리할 수 있습니다.',
-          evidence: '수출 기업은 환율 상승 시 원화 기준 매출이 늘어나는 효과가 있습니다.',
-        ),
-      ],
-    );
-  }
-
-  void _handleQuizTap(News news, int quizIndex) {
-    if (quizIndex == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => OxQuizScreen(
-            quiz: _buildSampleOxQuiz(news),
-            news: news,
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (quizIndex != 1) {
-      _showQuizComingSoon(quizIndex);
-      return;
-    }
-
-    if (!canOpenQuiz(news, _quiz)) {
-      if (_quiz == null) {
-        debugPrint('[Quiz] 준비 중 처리: 퀴즈 데이터 없음 (파일 없음/형식 오류)');
-      } else if (_quiz!.quizzes.isEmpty) {
-        debugPrint('[Quiz] 준비 중 처리: 퀴즈 문제가 0개');
-      } else if (_quiz!.newsId != news.id) {
-        debugPrint(
-          '[Quiz] 준비 중 처리: news_id 불일치 (기사: ${news.id}, 퀴즈: ${_quiz!.newsId})',
-        );
-      }
-      _showQuizComingSoon(quizIndex);
-      return;
-    }
-
-    Navigator.push(
-      context,
       MaterialPageRoute(
-        builder: (_) => QuizScreen(quiz: _quiz!, news: news),
+        builder: (_) => NewsDetailScreen(news: news, quiz: _quiz),
       ),
     );
-  }
-
-  void _showQuizComingSoon(int index) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text('퀴즈 ${index + 1}은(는) 준비 중이에요.')));
   }
 
   @override
@@ -174,12 +125,14 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.paper,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
           children: [
             const _HomeHeader(),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             Container(height: 1.5, color: AppColors.ink),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            const _MyInvestmentRow(),
+            const SizedBox(height: 14),
             FutureBuilder<List<News>>(
               future: _newsFuture,
               builder: (context, snapshot) {
@@ -208,24 +161,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
                 final news = list[_index];
-                // 카드가 바뀔 때 살짝 페이드
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: NewsCard(
-                    key: ValueKey(news.id),
-                    news: news,
-                    onTap: () => _openDetail(news),
-                    onQuizTap: (quizIndex) => _handleQuizTap(news, quizIndex),
-                    pager: NewsCardPager(
-                      index: _index,
-                      total: list.length,
-                      onPrev: () => setState(() => _index--),
-                      onNext: () => setState(() => _index++),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 카드가 바뀔 때 살짝 페이드
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: NewsCard(
+                        key: ValueKey(news.id),
+                        news: news,
+                        onTap: () => _openDetail(news),
+                        pager: NewsCardPager(
+                          index: _index,
+                          total: list.length,
+                          onPrev: () => setState(() => _index--),
+                          onNext: () => setState(() => _index++),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (list.length > 1) ...[
+                      const SizedBox(height: 10),
+                      NewsPagerDots(index: _index, total: list.length),
+                    ],
+                    if (news.terms.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _TodayTerm(news: news, term: news.terms.first),
+                    ],
+                  ],
                 );
               },
             ),
+            const SizedBox(height: 28),
+            const _TodayJournal(),
           ],
         ),
       ),
@@ -238,27 +205,12 @@ class _HomeHeader extends StatelessWidget {
   const _HomeHeader();
 
   static const _months = [
-    'JAN',
-    'FEB',
-    'MAR',
-    'APR',
-    'MAY',
-    'JUN',
-    'JUL',
-    'AUG',
-    'SEP',
-    'OCT',
-    'NOV',
-    'DEC',
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', //
+    'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
   ];
   static const _weekdays = [
-    'MONDAY',
-    'TUESDAY',
-    'WEDNESDAY',
-    'THURSDAY',
-    'FRIDAY',
-    'SATURDAY',
-    'SUNDAY',
+    'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', //
+    'FRIDAY', 'SATURDAY', 'SUNDAY',
   ];
 
   @override
@@ -279,10 +231,8 @@ class _HomeHeader extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppFonts.serif,
                   color: AppColors.ink,
-                  fontSize: 22,
+                  fontSize: 23,
                   fontWeight: FontWeight.w700,
-                  height: 1.2,
-                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 4),
@@ -291,19 +241,246 @@ class _HomeHeader extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: AppFonts.sans,
                   color: AppColors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 1.4,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.44,
                 ),
               ),
             ],
           ),
         ),
-        const Icon(
-          Icons.notifications_none_rounded,
-          color: AppColors.ink,
-          size: 24,
+        const Icon(Icons.notifications_none, color: AppColors.ink, size: 26),
+      ],
+    );
+  }
+}
+
+/// `내 투자 12,342,500원  >` — 누르면 포트폴리오 탭으로.
+class _MyInvestmentRow extends StatelessWidget {
+  const _MyInvestmentRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: portfolioStore,
+      builder: (context, _) {
+        final total = portfolioStore.totalKrw;
+        return InkWell(
+          onTap: () => MainShell.selectTab(context, MainShell.portfolio),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                Text(
+                  '내 투자',
+                  style: TextStyle(
+                    fontFamily: AppFonts.sans,
+                    color: AppColors.muted,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  total == null ? '포트폴리오를 등록해 주세요' : formatMoney(total, 'KRW'),
+                  style: TextStyle(
+                    fontFamily: AppFonts.sans,
+                    color: total == null ? AppColors.muted : AppColors.ink,
+                    fontSize: 13,
+                    fontWeight: total == null
+                        ? FontWeight.w400
+                        : FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: AppColors.muted,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 오늘의 용어: 지금 보는 기사의 첫 용어.
+class _TodayTerm extends StatelessWidget {
+  const _TodayTerm({required this.news, required this.term});
+
+  final News news;
+  final Term term;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([savedStore, portfolioStore]),
+      builder: (context, _) {
+        final saved = savedStore.isTermSaved(term);
+        final mine = portfolioStore.stockNames.contains(news.stockName);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text(
+                  '오늘의 용어',
+                  style: TextStyle(
+                    fontFamily: AppFonts.serif,
+                    color: AppColors.ink,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    savedStore.toggleTerm(term);
+                    showToast(context, saved ? '용어 스크랩을 취소했어요' : '용어를 스크랩했어요');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      saved ? '용어집에 담김 ✓' : '용어집에 담기',
+                      style: TextStyle(
+                        fontFamily: AppFonts.sans,
+                        color: saved ? AppColors.ink : AppColors.muted,
+                        fontSize: 13,
+                        fontWeight: saved ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    term.word,
+                    style: TextStyle(
+                      fontFamily: AppFonts.serif,
+                      color: AppColors.ink,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    term.meaning,
+                    style: TextStyle(
+                      fontFamily: AppFonts.sans,
+                      color: const Color(0xFF2A2C31),
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(height: 1, color: const Color(0xFFEFECE6)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Text(
+                        mine ? '내 종목과 연결' : '관련 종목',
+                        style: TextStyle(
+                          fontFamily: AppFonts.sans,
+                          color: AppColors.muted,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: const Color(0xFFE4E0D8)),
+                        ),
+                        child: Text(
+                          news.stockName,
+                          style: TextStyle(
+                            fontFamily: AppFonts.sans,
+                            color: const Color(0xFF2A2C31),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 오늘의 일지: 'JOURNAL · N번째 기록  지난 기록 ›' + 질문 + 노트 카드.
+class _TodayJournal extends StatelessWidget {
+  const _TodayJournal();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(
+              'JOURNAL · ${journalEntryCount + 1}번째 기록',
+              style: TextStyle(
+                fontFamily: AppFonts.sans,
+                color: const Color(0xFF8A7F6E),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.1,
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: () => MainShell.selectTab(context, MainShell.journal),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  '지난 기록 ›',
+                  style: TextStyle(
+                    fontFamily: AppFonts.sans,
+                    color: AppColors.muted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
+        Text(
+          '오늘 시장을 보며\n어떤 생각을 했나요?',
+          style: TextStyle(
+            fontFamily: AppFonts.serif,
+            color: AppColors.ink,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            height: 1.38,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const JournalPromptCard(),
       ],
     );
   }
