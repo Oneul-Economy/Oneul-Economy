@@ -1,0 +1,28 @@
+{
+  "holdings": [
+    {
+      "stock_name": "애플",
+      "stock_code": "AAPL",
+      "quantity": 0.5,
+      "avg_price": 182.3,
+      "market_value": 96.1,
+      "currency": "USD"
+    },
+    {
+      "stock_name": "TIGER 미국S&P500",
+      "stock_code": null,
+      "quantity": 15,
+      "avg_price": 17850,
+      "market_value": 291000,
+      "currency": "KRW"
+    },
+    {
+      "stock_name": "NAVER",
+      "stock_code": "035420",
+      "quantity": 1,
+      "avg_price": null,
+      "market_value": 182400,
+      "currency": "KRW"
+    }
+  ]
+}

@@ -30,6 +30,91 @@ python check.py "results/*-v2.json"
   ```
   고치는 방법: 실패한 기사만 다시 실행
 
+## 결과 검사 (`check.py`)
+
+```bash
+python check.py "results/*-v2.json"
+echo $?                      # Windows PowerShell은 echo $LASTEXITCODE
+```
+
+모든 파일을 끝까지 검사한 뒤 실패 목록을 출력하고, 실패가 하나라도 있으면 **종료 코드 1**.
+
+| 구분 | 조건 | 이유 |
+| --- | --- | --- |
+| 실패 | 본문에 없는 용어 | 앱이 본문에서 `terms[].word`를 글자 그대로 찾아 밑줄을 침. 없으면 누를 수 없는 용어가 됨 |
+| 실패 | 중복 용어 | 같은 단어가 `terms`에 두 번 |
+| 실패 | 읽을 수 없음 | 깨진 JSON, 원문을 `samples/`·`Backend/pipeline/output/`에서 못 찾음 |
+| 경고 | 겹치는 용어 (예: `["교섭", "단독교섭"]`) | 앱이 긴 용어부터 밑줄을 쳐서 동작에는 문제없음. 자주 나오면 프롬프트에서 피하게 개선 |
+
+```
+실패 2개
+- 20261105-005930-366-0001202773-claude-v2.json: 본문에 없는 용어 ["단체교섭"]
+- 20261105-005930-366-0001202773-claude-v2.json: 중복 용어 ["공동교섭단"]
+```
+
+- **실패한 결과는 앱(`Frontend/assets/mock/`)이나 DB(`load_news`)에 넣지 않음**
+- 고치는 방법: 그 기사를 `rewrite.py`로 다시 첨삭 → `check.py`로 재검사 → 통과하면 사용
+
+## 용어 퀴즈 (`quiz.py`)
+
+첨삭 결과(`News`)의 `terms` 앞에서부터 최대 3개로 4지선다 용어 퀴즈를 만든다. 형식은 `docs/data-format.md`의 `3. Quiz`.
+
+```bash
+python quiz.py "results/*-v2.json" --provider claude
+python quiz.py results/20261105-005930-366-0001202773-claude-v2.json --no-verify   # 2차 검증 끄기
+```
+
+- 결과: `results/quiz/{news_id}-quiz-{모델}-{프롬프트 버전}.json` (기사 1건 = 파일 1개). `results/*-v2.json` 패턴에 섞이지 않게 하위 폴더
+- 모델은 정답 1개와 오답 3개를 따로 주고, 보기 순서와 `answer_index`는 코드가 정함 (한 기사 안에서 정답 위치가 겹치지 않게)
+- **자동 검사** (하나라도 걸리면 그 기사의 퀴즈 파일을 저장하지 않음)
+  - 보기가 서로 다른 4개, `answer_index` 0~3
+  - `word`가 기사 `terms`에 있음, 같은 `word`의 문제가 두 번 나오지 않음
+  - 보기에 `word`가 그대로 들어 있지 않음 (문제에는 들어가도 됨)
+  - 정답 보기 길이 ≤ 오답 평균 × 1.5
+  - 투자 권유 표현 없음 (`check.py`의 `INVEST`)
+- **2차 검증** (기본으로 켜짐, `--no-verify`로 끔): 정답을 숨긴 채 모델에게 기사와 문제를 주고 다시 풀게 함. 다른 답을 고르거나 "맞는 보기가 둘 이상"이라고 하면 실패. 기사당 호출이 1번 더 듦 (생성 1번 + 검증 1번)
+- 실패: 나머지 기사는 계속 처리하고, 마지막에 실패 목록 출력 후 **종료 코드 1**
+  ```
+  퀴즈 실패 1개
+  - 20261105-005930-366-0001202773-q2: 보기에 정답 단어가 들어 있음 ("공동교섭단")
+  ```
+  고치는 방법: 그 기사만 `quiz.py`로 다시 생성 → 통과하면 사용. **실패한 퀴즈는 앱(`Frontend/assets/mock/quiz.json`)·DB에 넣지 않음**
+
+## OX 퀴즈 (`ox_quiz.py`)
+
+첨삭 결과(`News`) 본문으로 기사 내용 OX 퀴즈를 2~3문제 만든다. 형식은 `docs/data-format.md`의 `4. OxQuiz` (앱 `OxQuiz` 모델과 같음).
+
+```bash
+python ox_quiz.py "results/*-v2.json" --provider claude
+```
+
+- 결과: `results/ox/{news_id}-ox-{모델}-{프롬프트 버전}.json`
+- 문제 순서는 코드가 섞음 (모델은 늘 OXO처럼 같은 순서로 냄)
+- **자동 검사**: 문제 2개 이상, O와 X가 둘 다 있음, `evidence`가 본문에 글자 그대로 있음, 문제가 평서문, 권유 표현 없음
+- **2차 검증** (기본 켜짐, `--no-verify`로 끔): 정답을 숨기고 기사만 주고 다시 풀게 함. 답이 다르거나 "기사만으로 판단할 수 없음"이면 실패
+- 실패 처리와 고치는 방법은 `quiz.py`와 같음 (그 기사는 저장 안 함, 종료 코드 1, 다시 생성)
+
+## 보유 종목 캡처 인식 (`portfolio_scan.py`)
+
+증권 앱 보유 종목(잔고) 화면 캡처를 읽어 #43 `PUT /users/{login_id}/holdings` 요청 형식(`{"holdings": [...]}`)으로 만든다.
+
+```bash
+python portfolio_scan.py 캡처.png --provider claude              # 화면에 출력
+python portfolio_scan.py 캡처.png -o holdings.json                # 파일로 저장
+python portfolio_scan.py samples/portfolio/kr-basic.png --expect samples/portfolio/kr-basic.expected.json
+```
+
+- 서버(#46 `POST /portfolio/scan`)에서는 `from portfolio_scan import scan` → `scan(이미지 bytes, "image/png", provider="claude")`
+- 화면에서 못 읽은 값은 **추측하지 않고 `null`** (#43 규칙). 이름만 보이면 `stock_code`도 `null`
+- **캡처 원본은 저장하지 않음**
+  - 이 모듈은 이미지를 메모리에서 AI API로 보내기만 하고 파일·로그에 남기지 않음. 저장하는 것은 결과 JSON(보유 종목)뿐
+  - 서버(`POST /portfolio/scan`)도 업로드를 디스크나 DB에 저장하지 말고, 받은 bytes를 바로 `scan()`에 넘긴 뒤 버리기
+  - 오류 메시지에도 수량·금액 같은 값은 넣지 않음 (어느 칸이 왜 틀렸는지만). 서버 로그에 계좌 정보가 남지 않게
+  - 캡처는 선택한 AI 회사(Anthropic / Google / OpenAI) API로 전송됨. 그 회사 쪽 보관 정책은 각 회사 API 약관을 따름
+- 결과는 #43 규칙(이름 1~100자, 코드 20자 이하, 숫자 0 이상, 통화 대문자 3글자, 최대 200개)으로 검사. 안 맞거나 png·jpeg·webp·gif가 아니면 `ScanError`, CLI는 **종료 코드 1**
+- 보유 종목 화면이 아니면 `{"holdings": []}`
+- 테스트 이미지: `samples/portfolio/`의 가짜 증권 앱 캡처 3장과 정답 JSON. `--expect`로 비교하면 다른 칸을 출력하고 종료 코드 1. 다시 만들려면 `pip install pillow` 후 `python samples/portfolio/make_samples.py`
+
 ## 파일
 
 | 파일 | 내용 |
@@ -37,6 +122,9 @@ python check.py "results/*-v2.json"
 | `guidelines.md` | 첨삭 기준 |
 | `prompts/rewrite_v*.md` | 프롬프트. `{title}`, `{content}` 자리에 원문이 들어감 |
 | `rewrite.py` | 첨삭 실행. `id`·`stock_name`·`source`는 원문에서 복사, `read_minutes`는 코드로 계산 |
+| `quiz.py`, `prompts/quiz_*.md` | 용어 퀴즈 생성·검사·2차 검증 |
+| `ox_quiz.py`, `prompts/ox_*.md` | OX 퀴즈 생성·검사·2차 검증 (모델 호출은 `quiz.py` 것을 씀) |
+| `portfolio_scan.py`, `prompts/portfolio_scan_v1.md` | 보유 종목 캡처 → Holdings JSON |
 | `check.py` | 결과 자동 점검 (숫자, 용어, 권유 표현, 분량). 원문은 `samples/`와 `Backend/pipeline/output/`에서 id로 찾음 |
 | `samples/` | 입력 기사 (#6 크롤러 결과) |
 | `results/` | 결과와 평가 표 (`results/README.md`) |
